@@ -1,0 +1,98 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">User Portal</div>
+      <h1>Dashboard</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline">Export Snapshot</button>
+      <button class="btn btn-primary" data-action="new-offer">Create Offer</button>
+    </div>
+  </div>
+
+  <div class="grid-responsive mb-6">
+    <div class="card kpi-card">
+      <div class="kpi-label">My Offers</div>
+      <div class="kpi-value" id="user-offers-count">--</div>
+      <div class="text-sm text-slate-500">Total created</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Pending Approval</div>
+      <div class="kpi-value" id="user-pending-count">--</div>
+      <div class="text-sm text-warning">Awaiting review</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Approved</div>
+      <div class="kpi-value" id="user-approved-count">--</div>
+      <div class="text-sm text-success">Completed</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">My Requests</div>
+      <div class="kpi-value" id="user-requests-count">--</div>
+      <div class="text-sm text-slate-500">Total submitted</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5 auto-rows-max">
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">My Recent Offers</h3>
+        <a href="#offers-list" data-route="offers-list" class="btn btn-ghost">View all</a>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Value</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody data-fill="offers"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">My Requests</h3>
+        <a href="#requests-list" data-route="requests-list" class="btn btn-ghost">View all</a>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody data-fill="requests"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-5">
+    <div class="panel-header">
+      <h3 class="m-0">Quick Actions</h3>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mt-4">
+      <a href="#offer-create" data-route="offer-create" class="card p-4 text-center hover:bg-slate-50 cursor-pointer">
+        <div class="text-2xl mb-2">📋</div>
+        <div class="font-semibold">Create Offer</div>
+      </a>
+      <a href="#request-create" data-route="request-create" class="card p-4 text-center hover:bg-slate-50 cursor-pointer">
+        <div class="text-2xl mb-2">📝</div>
+        <div class="font-semibold">New Request</div>
+      </a>
+      <a href="#products" data-route="products" class="card p-4 text-center hover:bg-slate-50 cursor-pointer">
+        <div class="text-2xl mb-2">📦</div>
+        <div class="font-semibold">View Products</div>
+      </a>
+    </div>
+  </div>
+</section>
+

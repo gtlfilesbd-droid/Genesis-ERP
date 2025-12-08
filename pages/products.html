@@ -1,0 +1,115 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Product Modules</div>
+      <h1>Product Management</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" data-action="export-products-csv">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5 auto-rows-max">
+    <div class="card">
+      <div class="pill">Add Product</div>
+      <h3 class="mt-2">Product Addition Form</h3>
+      <form class="space-y-4" data-form="product-add">
+        <div class="form-two-col">
+          <div class="input-group">
+            <label class="input-label">Product Name *</label>
+            <input class="input" name="name" placeholder="Product name" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Brand *</label>
+            <input class="input" name="brand" placeholder="Brand" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Model *</label>
+            <input class="input" name="model" placeholder="Model" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Manufacturer *</label>
+            <input class="input" name="manufacturer" placeholder="Manufacturer" required />
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Product Description *</label>
+          <textarea class="input" name="description" rows="3" placeholder="Detailed description" required></textarea>
+        </div>
+        <div class="form-two-col">
+          <div class="input-group">
+            <label class="input-label">Origin *</label>
+            <input class="input" name="origin" placeholder="Country of origin" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Shipment *</label>
+            <input class="input" name="shipment" placeholder="Shipping method" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Quantity *</label>
+            <input class="input" name="quantity" type="number" min="0" placeholder="e.g. 100" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Unit *</label>
+            <input class="input" name="unit" placeholder="e.g. piece, kg" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Unit Price *</label>
+            <input class="input" name="unitPrice" type="number" min="0" step="0.01" placeholder="USD" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Commission %</label>
+            <input class="input" name="commission" type="number" min="0" step="0.1" placeholder="Optional" />
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Product Image *</label>
+          <input class="input" name="image" type="file" accept="image/*" required />
+          <small class="text-sm text-slate-500">PNG, JPG up to 2MB</small>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Product Format *</label>
+          <select class="input" name="format" required>
+            <option value="local">Local</option>
+            <option value="foreign">Foreign</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button type="reset" class="btn btn-outline">Reset</button>
+          <button type="submit" class="btn btn-primary">Add Product</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="pill">Product Database</div>
+      <h3 class="mt-2">Registered Products</h3>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th>Description</th>
+              <th>Brand</th>
+              <th>Model</th>
+              <th>Unit Price</th>
+              <th>Image</th>
+            </tr>
+          </thead>
+          <tbody data-fill="products">
+            <tr>
+              <td colspan="7">
+                <div class="loading-state">
+                  <span class="loading-spinner"></span>
+                  Loading products...
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+

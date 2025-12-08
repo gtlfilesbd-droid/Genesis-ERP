@@ -1,0 +1,93 @@
+<section class="max-w-5xl mx-auto">
+  <div class="page-header">
+    <div>
+      <div class="pill">Offer Builder</div>
+      <h1>Create Offer</h1>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-outline" data-action="save-draft">Save Draft</button>
+      <button type="submit" class="btn btn-primary">Submit for Approval</button>
+    </div>
+  </div>
+  <form data-form="offer-create">
+    <div class="grid grid-cols-2 gap-5 auto-rows-max">
+      <div class="panel">
+        <h3>Offer Details</h3>
+        <div class="form-two-col">
+          <div class="input-group">
+            <label class="input-label">Customer *</label>
+            <input class="input" name="customer" placeholder="Customer name" required />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Department *</label>
+            <select class="input" name="department" required>
+              <option value="">Select department</option>
+              <option>Industrial</option>
+              <option>Logistics</option>
+              <option>Healthcare</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Offer Owner</label>
+            <input class="input" value="Alex Morgan" readonly />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Valid Until</label>
+            <input class="input" type="date" />
+          </div>
+        </div>
+      <div class="divider"></div>
+      <h3 class="mt-2">Product Selection</h3>
+      <div class="form-two-col">
+        <div class="input-group">
+          <label class="input-label">Product</label>
+          <select class="input" data-offer-product></select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Quantity</label>
+          <input class="input" type="number" min="1" value="1" data-offer-qty />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div class="card card-muted">
+          <div class="text-xs text-slate-500 uppercase tracking-wide">Unit Price</div>
+          <div class="text-2xl font-semibold mt-1" data-offer-price>--</div>
+        </div>
+        <div class="card card-muted">
+          <div class="text-xs text-slate-500 uppercase tracking-wide">Commission</div>
+          <div class="text-2xl font-semibold mt-1" data-offer-commission>--</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Summary</h3>
+      <div class="space-y-3">
+        <div class="stat-block">
+          <div>Subtotal</div>
+          <strong data-offer-subtotal>--</strong>
+        </div>
+        <div class="stat-block">
+          <div>Commission</div>
+          <strong data-offer-commission>--</strong>
+        </div>
+        <div class="stat-block">
+          <div>Total</div>
+          <strong data-offer-total>--</strong>
+        </div>
+      </div>
+      <div class="divider mt-4"></div>
+      <h3 class="mt-4">Notes</h3>
+      <textarea class="input" rows="5" placeholder="Add commercial note..."></textarea>
+      <div class="space-y-2 mt-4">
+        <label class="inline-flex items-center gap-2">
+          <input type="checkbox" /> Requires management approval
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input type="checkbox" /> Attach compliance letter
+        </label>
+      </div>
+    </div>
+  </div>
+  </form>
+</section>
+

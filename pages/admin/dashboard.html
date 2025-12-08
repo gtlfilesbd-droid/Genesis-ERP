@@ -1,0 +1,116 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Admin Portal</div>
+      <h1>Administration Dashboard</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" data-action="refresh-admin">Refresh</button>
+    </div>
+  </div>
+
+  <div class="grid-responsive mb-6">
+    <div class="card kpi-card">
+      <div class="kpi-label">Pending Users</div>
+      <div class="kpi-value" id="pending-users-count">--</div>
+      <div class="text-sm text-warning">Awaiting approval</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Total Users</div>
+      <div class="kpi-value" id="total-users-count">--</div>
+      <div class="text-sm text-slate-500">All registered</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Departments</div>
+      <div class="kpi-value" id="departments-count">--</div>
+      <div class="text-sm text-slate-500">Active</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Designations</div>
+      <div class="kpi-value" id="designations-count">--</div>
+      <div class="text-sm text-slate-500">Total</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5 auto-rows-max mb-5">
+    <!-- Pending Users -->
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">Pending User Approvals</h3>
+        <button class="btn btn-ghost btn-sm" data-action="refresh-pending-users">Refresh</button>
+      </div>
+      <div class="table-wrapper" id="pending-users-table">
+        <div class="loading-state text-slate-500 text-sm">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Departments -->
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">Departments</h3>
+        <button class="btn btn-primary btn-sm" data-action="add-department">Add Department</button>
+      </div>
+      <div class="table-wrapper" id="departments-table">
+        <div class="loading-state text-slate-500 text-sm">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Designations -->
+  <div class="card">
+    <div class="panel-header">
+      <h3 class="m-0">Designations</h3>
+      <button class="btn btn-primary btn-sm" data-action="add-designation">Add Designation</button>
+    </div>
+    <div class="table-wrapper" id="designations-table">
+      <div class="loading-state text-slate-500 text-sm">Loading...</div>
+    </div>
+  </div>
+</section>
+
+<!-- Add Department Modal -->
+<div id="modal-add-department" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Department</h3>
+      <button class="btn btn-ghost" data-modal-close>&times;</button>
+    </div>
+    <form id="form-add-department" class="modal-body">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Department Name</label>
+        <input type="text" name="name" required class="input w-full" placeholder="Enter department name" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Department</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Designation Modal -->
+<div id="modal-add-designation" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Designation</h3>
+      <button class="btn btn-ghost" data-modal-close>&times;</button>
+    </div>
+    <form id="form-add-designation" class="modal-body">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+        <select name="department_id" required class="input w-full" id="designation-dept-select">
+          <option value="">Select department</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Designation Title</label>
+        <input type="text" name="title" required class="input w-full" placeholder="Enter designation title" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Designation</button>
+      </div>
+    </form>
+  </div>
+</div>
+

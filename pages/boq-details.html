@@ -1,0 +1,71 @@
+<section class="max-w-5xl mx-auto">
+  <div class="page-header">
+    <div>
+      <div class="pill">BOQ Details</div>
+      <h1>BOQ-9002 • Smart Warehouse</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" data-modal-trigger="rejectModal" data-role="Department Head,Management,Admin" data-action="reject" data-entity="boq" data-id="BOQ-9002">Reject</button>
+      <button class="btn btn-primary" data-role="Department Head,Management,Admin" data-action="approve" data-entity="boq" data-id="BOQ-9002">Approve</button>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 gap-5 auto-rows-max">
+    <div class="panel">
+      <h3>Approval Flow</h3>
+      <div class="approval-flow">
+        <div class="approval-card">
+          <h4>Department Head</h4>
+          <span class="status-pill success">Approved</span>
+          <div class="text-xs text-slate-500 mt-2">Dennis Shaw • Nov 14</div>
+        </div>
+        <div class="approval-card">
+          <h4>Finance</h4>
+          <span class="status-pill warning">In Review</span>
+          <div class="text-xs text-slate-500 mt-2">Sarah Brown</div>
+        </div>
+        <div class="approval-card">
+          <h4>Management</h4>
+          <span class="status-pill">Pending</span>
+          <div class="text-xs text-slate-500 mt-2">Paula Nolan</div>
+        </div>
+      </div>
+      <div class="divider mt-4 mb-4"></div>
+      <h3>Approval Timeline</h3>
+      <div class="timeline mt-3 timeline-compact" data-approval-timeline></div>
+    </div>
+    <div class="panel">
+      <h3>BOQ Summary</h3>
+      <div class="space-y-3">
+        <div class="stat-block">
+          <div>Capex Budget</div>
+          <strong>$180,000</strong>
+        </div>
+        <div class="stat-block">
+          <div>Committed Cost</div>
+          <strong>$142,500</strong>
+        </div>
+        <div class="stat-block">
+          <div>Variance</div>
+          <strong class="text-success">$37,500</strong>
+        </div>
+      </div>
+      <div class="divider mt-4 mb-4"></div>
+      <h3>Line Items</h3>
+      <ul class="list-reset space-y-2">
+        <li class="stat-block">
+          <div>Conveyor lines</div>
+          <strong>$95,000</strong>
+        </li>
+        <li class="stat-block">
+          <div>Control panels</div>
+          <strong>$32,500</strong>
+        </li>
+        <li class="stat-block">
+          <div>Commissioning</div>
+          <strong>$15,000</strong>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+

@@ -1,0 +1,64 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Offer Generation</div>
+      <h1>Offer Library</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline">Import</button>
+      <button class="btn btn-primary" data-role="Department Head,Management,Admin" data-action="new-offer">New Offer</button>
+    </div>
+  </div>
+  <div class="panel mb-4">
+    <div class="filters">
+      <div class="filter-field">
+        <label class="input-label">Department</label>
+        <select class="input">
+          <option>All</option>
+          <option>Industrial</option>
+          <option>Logistics</option>
+          <option>Healthcare</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Status</label>
+        <select class="input">
+          <option>All</option>
+          <option>Pending</option>
+          <option>Approved</option>
+          <option>Rejected</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Owner</label>
+        <input class="input" placeholder="Search owner" />
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Date range</label>
+        <input class="input" type="date" />
+      </div>
+    </div>
+  </div>
+  <div class="table-wrapper card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Department</th>
+          <th>Value</th>
+          <th>Status</th>
+          <th>Owner</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody data-fill="offers"></tbody>
+    </table>
+  </div>
+  <div class="card mt-4">
+    <h3>Offer History Timeline</h3>
+    <div class="timeline mt-3" data-approval-timeline></div>
+  </div>
+</section>
+

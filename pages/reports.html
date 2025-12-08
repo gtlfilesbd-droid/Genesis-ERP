@@ -1,0 +1,112 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Reporting & Analytics</div>
+      <h1>Executive Reports</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" data-action="export-pdf">Export PDF</button>
+      <button class="btn btn-primary" data-action="export-csv">Export CSV</button>
+    </div>
+  </div>
+  <div class="panel mb-4">
+    <div class="filters">
+      <div class="filter-field">
+        <label class="input-label">Report Type</label>
+        <select class="input">
+          <option>Department Sales</option>
+          <option>Revenue</option>
+          <option>Profit/Margin</option>
+          <option>Product Performance</option>
+          <option>Custom Builder</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Department</label>
+        <select class="input">
+          <option>All Departments</option>
+          <option>Industrial</option>
+          <option>Logistics</option>
+          <option>Healthcare</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Date Range</label>
+        <input class="input" type="date" />
+      </div>
+      <div class="filter-field">
+        <label class="input-label">Compare To</label>
+        <select class="input">
+          <option>Previous Period</option>
+          <option>Last Year</option>
+          <option>Budget</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="chart-grid mb-5">
+    <div class="card chart-card">
+      <div class="panel-header">
+        <h3 class="m-0">Department Sales Report</h3>
+        <button class="btn btn-ghost">Drilldown</button>
+      </div>
+      <canvas id="deptSalesChart" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="panel-header">
+        <h3 class="m-0">Revenue Report</h3>
+      </div>
+      <canvas id="revenueChart" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="panel-header">
+        <h3 class="m-0">Profit/Margin Report</h3>
+      </div>
+      <canvas id="marginChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="table-wrapper card">
+    <div class="panel-header">
+      <h3 class="m-0">Product Performance</h3>
+      <div class="report-actions">
+        <button class="btn btn-outline" data-action="export-pdf">Export PDF</button>
+        <button class="btn btn-outline" data-action="export-csv">Export CSV</button>
+      </div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Sales</th>
+          <th>Revenue</th>
+          <th>Margin</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Modular Conveyor</td>
+          <td>68</td>
+          <td>$442k</td>
+          <td>38%</td>
+          <td><span class="badge badge-success">On Track</span></td>
+        </tr>
+        <tr>
+          <td>Load Sensor Pro</td>
+          <td>142</td>
+          <td>$170k</td>
+          <td>34%</td>
+          <td><span class="badge badge-accent">Monitor</span></td>
+        </tr>
+        <tr>
+          <td>Smart Crane Module</td>
+          <td>32</td>
+          <td>$582k</td>
+          <td>41%</td>
+          <td><span class="badge badge-warning">Risk</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+

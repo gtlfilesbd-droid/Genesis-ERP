@@ -1,0 +1,56 @@
+<section class="max-w-4xl mx-auto">
+  <form data-form="request-create">
+    <div class="page-header">
+      <div>
+        <div class="pill">Request Workflow</div>
+        <h1>Create Request</h1>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-outline" data-action="save-draft">Save Draft</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="form-two-col">
+        <div class="input-group">
+          <label class="input-label">Request Type *</label>
+          <select class="input" name="type" required>
+            <option value="">Select type</option>
+            <option>Credit</option>
+            <option>Debit</option>
+            <option>Requisition</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Amount *</label>
+          <input class="input" name="amount" type="number" placeholder="Amount" min="0" required />
+        </div>
+        <div class="input-group">
+          <label class="input-label">Department *</label>
+          <select class="input" name="department" required>
+            <option value="">Select department</option>
+            <option>Industrial</option>
+            <option>Logistics</option>
+            <option>Healthcare</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Required Date *</label>
+          <input class="input" name="requiredDate" type="date" required />
+        </div>
+      </div>
+    <div class="divider mt-4 mb-4"></div>
+    <div class="input-group">
+      <label class="input-label">Supporting Notes</label>
+      <textarea class="input" rows="4" placeholder="Describe business justification..."></textarea>
+    </div>
+    <div class="input-group mt-4">
+      <label class="input-label">Attachments</label>
+      <div class="border border-dashed rounded p-4 text-center text-slate-500 cursor-pointer">
+        Drag & drop supporting documents
+      </div>
+    </div>
+  </div>
+  </form>
+</section>
+

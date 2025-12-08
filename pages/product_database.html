@@ -1,0 +1,42 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Product Modules</div>
+      <h1>Product Database</h1>
+    </div>
+    <div class="actions">
+      <a href="#add-product" class="btn btn-primary" data-route="add-product">Add New Product</a>
+      <button class="btn btn-primary" data-action="export-products-csv">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pill">Product Database</div>
+    <h3 class="mt-2">Registered Products</h3>
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product Name</th>
+            <th>Description</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Unit Price</th>
+            <th>Image</th>
+          </tr>
+        </thead>
+        <tbody data-fill="products">
+          <tr>
+            <td colspan="7">
+              <div class="loading-state">
+                <span class="loading-spinner"></span>
+                Loading products...
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

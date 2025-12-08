@@ -1,0 +1,156 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Department Portal Home</div>
+      <h1>Enterprise Performance</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline">Export Snapshot</button>
+      <button class="btn btn-primary" data-role="Management,Admin" data-action="new-offer">Create Offer</button>
+    </div>
+  </div>
+
+  <div class="grid-responsive mb-6">
+    <div class="card kpi-card">
+      <div class="kpi-label">Revenue</div>
+      <div class="kpi-value">$420k</div>
+      <div class="text-sm text-success">▲ +12% vs last month</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Cost</div>
+      <div class="kpi-value">$275k</div>
+      <div class="text-sm text-danger">▼ -4% vs last month</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Profit Margin</div>
+      <div class="kpi-value">34.5%</div>
+      <div class="text-sm text-success">▲ +1.4pt</div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-label">Pending Offers</div>
+      <div class="kpi-value">18</div>
+      <div class="text-sm text-warning">Needs attention</div>
+    </div>
+  </div>
+
+  <div class="chart-grid mb-6">
+    <div class="card chart-card">
+      <div class="panel-header">
+        <div>
+          <div class="pill">Trend</div>
+          <h3 class="m-0">Profit Trajectory</h3>
+        </div>
+        <button class="btn btn-ghost">View Details</button>
+      </div>
+      <canvas id="profitTrendChart" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="panel-header">
+        <div>
+          <div class="pill">Sales</div>
+          <h3 class="m-0">Monthly Sales</h3>
+        </div>
+        <button class="btn btn-ghost">Drilldown</button>
+      </div>
+      <canvas id="monthlySalesChart" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="panel-header">
+        <div>
+          <div class="pill">Departments</div>
+          <h3 class="m-0">Sales Share</h3>
+        </div>
+      </div>
+      <canvas id="departmentShareChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5 auto-rows-max">
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">Recent Offers</h3>
+        <button class="btn btn-ghost">View all</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Value</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody data-fill="offers"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">Pending Approvals</h3>
+        <button class="btn btn-ghost">Assign</button>
+      </div>
+      <div class="space-y-3">
+        <div class="stat-block">
+          <div>
+            <div class="font-semibold">Offer approvals</div>
+            <div class="text-sm text-slate-500">Awaiting review</div>
+          </div>
+          <strong>8</strong>
+        </div>
+        <div class="stat-block">
+          <div>
+            <div class="font-semibold">BOQ workflows</div>
+            <div class="text-sm text-slate-500">Finance stage</div>
+          </div>
+          <strong>5</strong>
+        </div>
+        <div class="stat-block">
+          <div>
+            <div class="font-semibold">Credit requests</div>
+            <div class="text-sm text-slate-500">Need exec sign-off</div>
+          </div>
+          <strong>3</strong>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="panel-header">
+        <h3 class="m-0">Sales by Department</h3>
+        <button class="btn btn-ghost">Manage targets</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Revenue</th>
+            <th>Target</th>
+            <th>Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Industrial</td>
+            <td>$180k</td>
+            <td>$220k</td>
+            <td><span class="badge badge-success">82%</span></td>
+          </tr>
+          <tr>
+            <td>Logistics</td>
+            <td>$135k</td>
+            <td>$190k</td>
+            <td><span class="badge badge-accent">71%</span></td>
+          </tr>
+          <tr>
+            <td>Healthcare</td>
+            <td>$105k</td>
+            <td>$160k</td>
+            <td><span class="badge badge-warning">66%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+

@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "path": "C:\\Users\\Administrator\\Desktop\\project"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/data.db": true,
+      "**/package-lock.json": true
+    },
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/node_modules/**": true,
+      "**/data.db": true
+    },
+    "files.maxMemoryForLargeFilesMB": 4096
+  },
+  "extensions": {
+    "recommendations": []
+  }
+}
+

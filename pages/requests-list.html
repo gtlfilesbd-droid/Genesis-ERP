@@ -1,0 +1,46 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Credit / Debit / Requisition</div>
+      <h1>Request Center</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline">Upload CSV</button>
+      <button class="btn btn-primary" data-action="new-request">New Request</button>
+    </div>
+  </div>
+  <div class="grid-responsive mb-4">
+    <div class="card">
+      <div class="pill">Credit</div>
+      <div class="text-2xl font-semibold mt-1">12 Pending</div>
+      <p class="text-slate-500 text-sm">Avg cycle 3.1 days</p>
+    </div>
+    <div class="card">
+      <div class="pill">Debit</div>
+      <div class="text-2xl font-semibold mt-1">5 Pending</div>
+      <p class="text-slate-500 text-sm">Avg cycle 2.3 days</p>
+    </div>
+    <div class="card">
+      <div class="pill">Requisition</div>
+      <div class="text-2xl font-semibold mt-1">9 Pending</div>
+      <p class="text-slate-500 text-sm">Avg cycle 4.2 days</p>
+    </div>
+  </div>
+  <div class="table-wrapper card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Requester</th>
+          <th>Amount</th>
+          <th>Manager</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody data-fill="requests"></tbody>
+    </table>
+  </div>
+</section>
+
