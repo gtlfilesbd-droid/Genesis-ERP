@@ -14,7 +14,7 @@ export function setToken(token) {
     localStorage.setItem(TOKEN_KEY, token);
   } else {
     localStorage.removeItem(TOKEN_KEY);
-  }
+}
 }
 
 // Get current user
@@ -88,7 +88,7 @@ export async function login(username, password) {
 
     if (!response.ok) {
       throw new Error(data.error || 'Login failed');
-    }
+}
 
     if (data.success && data.token && data.user) {
       setToken(data.token);
