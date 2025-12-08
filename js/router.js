@@ -5,6 +5,8 @@ const routes = {
   
   // Protected routes (authentication required)
   "user/dashboard": "user/dashboard.html",
+  "user/profile": "user/profile.html",
+  "user/settings": "user/settings.html",
   "admin/dashboard": "admin/dashboard.html",
   dashboard: "dashboard.html", // Legacy, redirects based on role
   "offers-list": "offers-list.html",

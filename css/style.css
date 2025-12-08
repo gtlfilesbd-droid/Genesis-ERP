@@ -300,6 +300,26 @@ textarea {
   margin-bottom: 1rem;
 }
 
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.pb-6 {
+  padding-bottom: 1.5rem;
+}
+
+.min-h-\[100px\] {
+  min-height: 100px;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
 .space-y-2 > * + * {
   margin-top: 0.5rem;
 }
@@ -432,6 +452,16 @@ textarea {
 .status-pill.rejected {
   color: var(--danger);
   background-color: rgba(239, 68, 68, 0.2);
+}
+
+.status-pill.admin {
+  color: var(--brand-primary);
+  background-color: rgba(37, 99, 235, 0.15);
+}
+
+.status-pill.user {
+  color: var(--text-muted);
+  background-color: rgba(148, 163, 184, 0.15);
 }
 
 .btn {
@@ -747,6 +777,30 @@ textarea {
   .lg\\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+  .lg\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lg\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .lg\\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+  .lg\\:col-span-3 {
+    grid-column: span 3 / span 3;
+  }
+}
+
+@media (min-width: 768px) {
+  .md\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .md\\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+  .md\\:flex-row {
+    flex-direction: row;
   }
 }
 

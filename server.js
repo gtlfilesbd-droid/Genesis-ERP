@@ -149,10 +149,49 @@ async function initDatabase() {
         password TEXT NOT NULL,
         role TEXT DEFAULT 'user',
         status TEXT DEFAULT 'pending',
+        profilePicture TEXT,
+        bio TEXT,
+        phone TEXT,
+        address TEXT,
+        city TEXT,
+        country TEXT,
         createdAt TEXT DEFAULT (datetime('now')),
         updatedAt TEXT DEFAULT (datetime('now'))
       )
     `);
+    
+    // Migrate existing users table if needed (add new columns)
+    try {
+      const tableInfo = executeQueryAll("PRAGMA table_info(users)");
+      const columns = tableInfo.map(col => col.name);
+      
+      if (!columns.includes('profilePicture')) {
+        db.run('ALTER TABLE users ADD COLUMN profilePicture TEXT');
+        console.log('[Server] Added profilePicture column to users table');
+      }
+      if (!columns.includes('bio')) {
+        db.run('ALTER TABLE users ADD COLUMN bio TEXT');
+        console.log('[Server] Added bio column to users table');
+      }
+      if (!columns.includes('phone')) {
+        db.run('ALTER TABLE users ADD COLUMN phone TEXT');
+        console.log('[Server] Added phone column to users table');
+      }
+      if (!columns.includes('address')) {
+        db.run('ALTER TABLE users ADD COLUMN address TEXT');
+        console.log('[Server] Added address column to users table');
+      }
+      if (!columns.includes('city')) {
+        db.run('ALTER TABLE users ADD COLUMN city TEXT');
+        console.log('[Server] Added city column to users table');
+      }
+      if (!columns.includes('country')) {
+        db.run('ALTER TABLE users ADD COLUMN country TEXT');
+        console.log('[Server] Added country column to users table');
+      }
+    } catch (error) {
+      console.warn('[Server] Migration check failed (table may already have columns):', error.message);
+    }
 
     // Departments table
     db.run(`
@@ -353,10 +392,22 @@ initDatabase().then(() => {
 
   // Verify token endpoint
   app.get('/api/auth/verify', authenticateToken, (req, res) => {
-    res.json({
-      success: true,
-      user: req.user
-    });
+    try {
+      const userId = req.user.id;
+      // Get full user profile from database
+      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({
+        success: true,
+        user: user
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // =============================
@@ -590,6 +641,107 @@ initDatabase().then(() => {
       saveDatabase();
 
       res.json({ success: true, id });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // =============================
+  // User Profile API Endpoints
+  // =============================
+
+  // Get current user profile
+  app.get('/api/user/profile', authenticateToken, (req, res) => {
+    try {
+      const userId = req.user.id;
+      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update user profile
+  app.put('/api/user/profile', authenticateToken, (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { name, bio, phone, address, city, country, profilePicture } = req.body;
+      
+      // Check if user exists
+      const existingUser = executeQuery('SELECT * FROM users WHERE id = ?', [userId]);
+      if (!existingUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Update profile
+      const updatedAt = new Date().toISOString();
+      const sql = `UPDATE users SET name = ?, bio = ?, phone = ?, address = ?, city = ?, country = ?, profilePicture = ?, updatedAt = ? WHERE id = ?`;
+      const stmt = db.prepare(sql);
+      stmt.run([
+        name || existingUser.name || "",
+        bio || existingUser.bio || "",
+        phone || existingUser.phone || "",
+        address || existingUser.address || "",
+        city || existingUser.city || "",
+        country || existingUser.country || "",
+        profilePicture || existingUser.profilePicture || "",
+        updatedAt,
+        userId
+      ]);
+      stmt.free();
+      saveDatabase();
+      
+      // Return updated user (excluding password)
+      const updatedUser = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      res.json({ success: true, user: updatedUser });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Change user password
+  app.put('/api/user/password', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword, confirmPassword } = req.body;
+      
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ error: 'All password fields are required' });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters' });
+      }
+      
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ error: 'New password and confirmation do not match' });
+      }
+      
+      // Get user and verify current password
+      const user = executeQuery('SELECT * FROM users WHERE id = ?', [userId]);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const validPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+      
+      // Hash new password and update
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const updatedAt = new Date().toISOString();
+      const stmt = db.prepare('UPDATE users SET password = ?, updatedAt = ? WHERE id = ?');
+      stmt.run([hashedPassword, updatedAt, userId]);
+      stmt.free();
+      saveDatabase();
+      
+      res.json({ success: true, message: 'Password updated successfully' });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

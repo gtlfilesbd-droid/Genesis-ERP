@@ -1117,6 +1117,7 @@ export async function mountFrame() {
   hydrateRoleSelector();
   hydrateUserDisplay();
   wireLogout();
+  hydrateUserDropdown();
 
   document
     .querySelector("[data-toggle-sidebar]")
@@ -1132,9 +1133,56 @@ export async function mountFrame() {
     updateRoleBadges(nextRole);
   });
 
-  document.addEventListener("route:change", () => toggleSidebar(false));
+  document.addEventListener("route:change", () => {
+    toggleSidebar(false);
+    // Close dropdown on route change
+    const dropdown = document.getElementById('user-dropdown-menu');
+    if (dropdown) dropdown.classList.add('hidden');
+  });
+
+  // Listen for user profile updates to refresh UI
+  document.addEventListener("user:updated", (event) => {
+    hydrateUserDisplay();
+  });
   
   console.log("[UI] Frame mounted, navigation wired");
+}
+
+function hydrateUserDropdown() {
+  const trigger = document.querySelector('[data-user-menu-trigger]');
+  const dropdown = document.getElementById('user-dropdown-menu');
+  
+  if (!trigger || !dropdown) return;
+
+  // Toggle dropdown on click
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  // Close dropdown when clicking on menu items (they will navigate)
+  dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      dropdown.classList.add('hidden');
+    });
+  });
+
+  // Add hover effect
+  dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+    item.addEventListener('mouseenter', () => {
+      item.style.backgroundColor = '#f1f5f9';
+    });
+    item.addEventListener('mouseleave', () => {
+      item.style.backgroundColor = 'transparent';
+    });
+  });
 }
 
 function hydrateUserDisplay() {
@@ -1153,19 +1201,63 @@ function hydrateUserDisplay() {
     el.textContent = user.name || user.username || 'User';
   });
 
-  // Update avatar initials
-  const initialsElements = document.querySelectorAll("[data-user-initials]");
+  // Update dropdown user info
+  const dropdownNameElements = document.querySelectorAll("[data-user-name-dropdown]");
+  dropdownNameElements.forEach((el) => {
+    el.textContent = user.name || user.username || 'User';
+  });
+
+  // Update avatar initials and profile pictures
   const initials = (user.name || user.username || 'U')
     .split(' ')
     .map(n => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+  
+  const initialsElements = document.querySelectorAll("[data-user-initials], [data-user-initials-dropdown]");
   initialsElements.forEach((el) => {
     el.textContent = initials;
   });
 
+  // Update avatars with profile pictures if available
+  const navbarImg = document.getElementById('user-avatar-img-navbar');
+  const dropdownImg = document.getElementById('user-avatar-img-dropdown');
+  const navbarAvatar = document.querySelector('[data-user-avatar]');
+  const dropdownAvatar = document.querySelector('[data-user-avatar-dropdown]');
+  const navbarInitialsEl = navbarAvatar?.querySelector('[data-user-initials]');
+  const dropdownInitialsEl = dropdownAvatar?.querySelector('[data-user-initials-dropdown]');
+  
+  if (user.profilePicture && user.profilePicture.startsWith('data:image')) {
+    if (navbarImg && navbarAvatar) {
+      navbarImg.src = user.profilePicture;
+      navbarImg.style.display = 'block';
+      if (navbarInitialsEl) navbarInitialsEl.style.display = 'none';
+      navbarAvatar.style.background = 'transparent';
+    }
+    
+    if (dropdownImg && dropdownAvatar) {
+      dropdownImg.src = user.profilePicture;
+      dropdownImg.style.display = 'block';
+      if (dropdownInitialsEl) dropdownInitialsEl.style.display = 'none';
+      dropdownAvatar.style.background = 'transparent';
+    }
+  } else {
+    // Use initials - hide images and show initials
+    if (navbarImg) navbarImg.style.display = 'none';
+    if (dropdownImg) dropdownImg.style.display = 'none';
+    if (navbarInitialsEl) navbarInitialsEl.style.display = 'flex';
+    if (dropdownInitialsEl) dropdownInitialsEl.style.display = 'flex';
+    if (navbarAvatar) navbarAvatar.style.background = 'var(--brand-primary, #3b82f6)';
+    if (dropdownAvatar) dropdownAvatar.style.background = 'var(--brand-primary, #3b82f6)';
+  }
+
   // Update role display
+  const roleElements = document.querySelectorAll("[data-role-display], [data-role-display-dropdown]");
+  roleElements.forEach((el) => {
+    el.textContent = user.role || 'user';
+  });
+  
   updateRoleBadges(user.role || 'user');
 }
 
@@ -1799,6 +1891,240 @@ async function hydrateProductDetails(container) {
   });
 }
 
+// Hydrate user profile page (read-only)
+async function hydrateUserProfilePage(container) {
+  try {
+    const { getUserProfile, formatDate, getUserInitials } = await import('./user/profile.js');
+    const profile = await getUserProfile();
+
+    // Update profile picture/avatar
+    const avatarLarge = container.querySelector('#profile-avatar-large');
+    const imgLarge = container.querySelector('#profile-picture-large');
+    const initialsLarge = container.querySelector('#profile-initials-large');
+    
+    if (profile.profilePicture && profile.profilePicture.startsWith('data:image')) {
+      imgLarge.src = profile.profilePicture;
+      imgLarge.style.display = 'block';
+      initialsLarge.style.display = 'none';
+      avatarLarge.style.background = 'transparent';
+    } else {
+      imgLarge.style.display = 'none';
+      initialsLarge.textContent = getUserInitials(profile.name);
+      initialsLarge.style.display = 'flex';
+    }
+
+    // Update basic info
+    container.querySelector('#profile-name').textContent = profile.name || '--';
+    container.querySelector('#profile-role').textContent = profile.role || 'user';
+    container.querySelector('#profile-email').textContent = profile.email || '--';
+    container.querySelector('#profile-created').textContent = formatDate(profile.createdAt);
+    container.querySelector('#profile-updated').textContent = formatDate(profile.updatedAt);
+
+    // Update personal information
+    container.querySelector('#profile-field-name').textContent = profile.name || '--';
+    container.querySelector('#profile-field-username').textContent = profile.username || '--';
+    container.querySelector('#profile-field-email').textContent = profile.email || '--';
+    const roleBadge = container.querySelector('#profile-role-badge');
+    if (roleBadge) {
+      roleBadge.textContent = profile.role || 'user';
+      roleBadge.className = `status-pill ${(profile.role || 'user').toLowerCase()}`;
+    }
+
+    // Update contact information
+    container.querySelector('#profile-field-phone').textContent = profile.phone || '--';
+    container.querySelector('#profile-field-address').textContent = profile.address || '--';
+    container.querySelector('#profile-field-city').textContent = profile.city || '--';
+    container.querySelector('#profile-field-country').textContent = profile.country || '--';
+
+    // Update bio
+    const bioElement = container.querySelector('#profile-field-bio');
+    if (profile.bio && profile.bio.trim()) {
+      bioElement.innerHTML = profile.bio;
+      bioElement.classList.remove('text-slate-400', 'italic');
+    } else {
+      bioElement.innerHTML = '<div class="text-slate-400 italic">No bio provided</div>';
+    }
+  } catch (error) {
+    console.error('[UI] Error hydrating user profile page:', error);
+    showToast('Failed to load profile information', 'error');
+  }
+}
+
+// Hydrate user settings page (editable)
+async function hydrateUserSettingsPage(container) {
+  try {
+    const { getUserProfile, updateUserProfile, changePassword, readFileAsDataURL, getUserInitials } = await import('./user/profile.js');
+    const { getCurrentUser, setCurrentUser } = await import('./auth.js');
+
+    // Load current profile
+    let profile = await getUserProfile();
+
+    // Populate form fields
+    container.querySelector('#settings-name').value = profile.name || '';
+    container.querySelector('#settings-email').value = profile.email || '';
+    container.querySelector('#settings-username').value = profile.username || '';
+    container.querySelector('#settings-role').value = profile.role || 'user';
+    container.querySelector('#settings-bio').value = profile.bio || '';
+    container.querySelector('#settings-phone').value = profile.phone || '';
+    container.querySelector('#settings-address').value = profile.address || '';
+    container.querySelector('#settings-city').value = profile.city || '';
+    container.querySelector('#settings-country').value = profile.country || '';
+
+    // Update profile picture preview
+    const previewWrapper = container.querySelector('#profile-picture-preview');
+    const previewImg = container.querySelector('#profile-picture-preview-img');
+    const previewInitials = container.querySelector('#profile-picture-preview-initials');
+    
+    if (profile.profilePicture && profile.profilePicture.startsWith('data:image')) {
+      previewImg.src = profile.profilePicture;
+      previewImg.style.display = 'block';
+      previewInitials.style.display = 'none';
+      previewWrapper.style.background = 'transparent';
+    } else {
+      previewImg.style.display = 'none';
+      previewInitials.textContent = getUserInitials(profile.name);
+      previewInitials.style.display = 'flex';
+    }
+
+    let newProfilePicture = profile.profilePicture || null;
+
+    // Handle profile picture upload
+    const pictureInput = container.querySelector('#profile-picture-input');
+    const pictureError = container.querySelector('#profile-picture-error');
+    
+    pictureInput?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        pictureError.classList.add('hidden');
+        const base64 = await readFileAsDataURL(file);
+        newProfilePicture = base64;
+
+        // Update preview
+        previewImg.src = base64;
+        previewImg.style.display = 'block';
+        previewInitials.style.display = 'none';
+        previewWrapper.style.background = 'transparent';
+      } catch (error) {
+        pictureError.textContent = error.message;
+        pictureError.classList.remove('hidden');
+        e.target.value = '';
+      }
+    });
+
+    // Handle profile form submission
+    const profileForm = container.querySelector('#profile-settings-form');
+    const profileError = container.querySelector('#profile-form-error');
+    const profileSuccess = container.querySelector('#profile-form-success');
+
+    profileForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      profileError.classList.add('hidden');
+      profileSuccess.classList.add('hidden');
+
+      try {
+        const formData = new FormData(profileForm);
+        const profileData = {
+          name: formData.get('name')?.trim() || '',
+          bio: formData.get('bio')?.trim() || '',
+          phone: formData.get('phone')?.trim() || '',
+          address: formData.get('address')?.trim() || '',
+          city: formData.get('city')?.trim() || '',
+          country: formData.get('country')?.trim() || '',
+          profilePicture: newProfilePicture || profile.profilePicture || '',
+        };
+
+        const result = await updateUserProfile(profileData);
+        
+        if (result.success) {
+          // Update local user data
+          const updatedUser = { ...getCurrentUser(), ...result.user };
+          setCurrentUser(updatedUser);
+          
+          // Refresh user display in navbar
+          hydrateUserDisplay();
+          
+          profileSuccess.textContent = 'Profile updated successfully!';
+          profileSuccess.classList.remove('hidden');
+          showToast('Profile updated successfully', 'success');
+
+          // Reload profile data
+          profile = await getUserProfile();
+        }
+      } catch (error) {
+        profileError.textContent = error.message || 'Failed to update profile';
+        profileError.classList.remove('hidden');
+        showToast(error.message || 'Failed to update profile', 'error');
+      }
+    });
+
+    // Handle password form submission
+    const passwordForm = container.querySelector('#password-change-form');
+    const passwordError = container.querySelector('#password-form-error');
+    const passwordSuccess = container.querySelector('#password-form-success');
+
+    passwordForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      passwordError.classList.add('hidden');
+      passwordSuccess.classList.add('hidden');
+
+      const formData = new FormData(passwordForm);
+      const currentPassword = formData.get('currentPassword');
+      const newPassword = formData.get('newPassword');
+      const confirmPassword = formData.get('confirmPassword');
+
+      // Validation
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        passwordError.textContent = 'All password fields are required';
+        passwordError.classList.remove('hidden');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        passwordError.textContent = 'New password must be at least 6 characters';
+        passwordError.classList.remove('hidden');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        passwordError.textContent = 'New password and confirmation do not match';
+        passwordError.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const result = await changePassword(currentPassword, newPassword, confirmPassword);
+        
+        if (result.success) {
+          passwordSuccess.textContent = 'Password changed successfully!';
+          passwordSuccess.classList.remove('hidden');
+          passwordForm.reset();
+          showToast('Password changed successfully', 'success');
+        }
+      } catch (error) {
+        passwordError.textContent = error.message || 'Failed to change password';
+        passwordError.classList.remove('hidden');
+        showToast(error.message || 'Failed to change password', 'error');
+      }
+    });
+
+    // Cancel buttons
+    container.querySelector('#cancel-profile-btn')?.addEventListener('click', () => {
+      window.location.hash = '#user/profile';
+    });
+
+    container.querySelector('#cancel-password-btn')?.addEventListener('click', () => {
+      passwordForm?.reset();
+      passwordError.classList.add('hidden');
+      passwordSuccess.classList.add('hidden');
+    });
+  } catch (error) {
+    console.error('[UI] Error hydrating user settings page:', error);
+    showToast('Failed to load settings', 'error');
+  }
+}
+
 export function hydratePage(container) {
   // Check if we're on login or signup page
   const loginForm = container.querySelector('#login-form');
@@ -1833,6 +2159,21 @@ export function hydratePage(container) {
   const userDashboard = container.querySelector('#user-offers-count');
   if (userDashboard) {
     hydrateUserDashboard(container);
+    return;
+  }
+
+  // Check if we're on user profile page
+  const userProfile = container.querySelector('#profile-name');
+  if (userProfile) {
+    hydrateUserProfilePage(container);
+    return;
+  }
+
+  // Check if we're on user settings page
+  const userSettings = container.querySelector('#profile-settings-form');
+  if (userSettings) {
+    hydrateUserSettingsPage(container);
+    return;
   }
   
   // Regular page hydration

@@ -37,9 +37,34 @@ export function setCurrentUser(user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(ROLE_KEY, user.role || 'user');
     document.dispatchEvent(new CustomEvent("role:change", { detail: user.role }));
+    // Trigger user data update event for UI refresh
+    document.dispatchEvent(new CustomEvent("user:updated", { detail: user }));
   } else {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ROLE_KEY);
+  }
+}
+
+// Refresh user profile from server
+export async function refreshUserProfile() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to refresh profile');
+    }
+
+    const profile = await response.json();
+    setCurrentUser(profile);
+    return profile;
+  } catch (error) {
+    console.error('[Auth] Error refreshing user profile:', error);
+    throw error;
   }
 }
 
@@ -131,6 +156,18 @@ export async function signup(name, email, username, password) {
 export function logout() {
   setToken(null);
   setCurrentUser(null);
+  
+  // Show logout message (if notifications are available)
+  try {
+    import('./notifications.js').then(({ showToast }) => {
+      showToast('Logged out successfully', 'success');
+    }).catch(() => {
+      // Notifications module not available, skip
+    });
+  } catch (error) {
+    // Ignore errors
+  }
+  
   window.location.hash = '#login';
 }
 
