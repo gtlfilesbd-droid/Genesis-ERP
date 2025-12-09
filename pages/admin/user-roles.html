@@ -5,8 +5,12 @@
       <h1>User Roles & Permissions</h1>
     </div>
     <div class="actions">
-      <button class="btn btn-primary" data-action="add-user-role">Add User Role</button>
-      <button class="btn btn-outline" data-action="refresh-user-roles">Refresh</button>
+      <button class="btn btn-primary" data-action="add-user-role">
+        Add User Role
+      </button>
+      <button class="btn btn-outline" data-action="refresh-user-roles">
+        Refresh
+      </button>
     </div>
   </div>
 
@@ -25,92 +29,119 @@
     </div>
     <div class="p-4">
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Select User</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Select User</label
+        >
         <select class="input w-full" id="assign-role-user-select">
           <option value="">Select user</option>
         </select>
       </div>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Select Role</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Select Role</label
+        >
         <select class="input w-full" id="assign-role-role-select">
           <option value="">Select role</option>
         </select>
       </div>
-      <button class="btn btn-primary" data-action="assign-role-to-user">Assign Role</button>
+      <button class="btn btn-primary" data-action="assign-role-to-user">
+        Assign Role
+      </button>
     </div>
   </div>
 </section>
 
 <!-- Add User Role Modal -->
 <div id="modal-add-user-role" class="modal-backdrop hidden">
-  <div class="modal" style="max-width: 600px;">
+  <div class="modal" style="max-width: 600px">
     <div class="modal-header">
       <h3>Create User Role</h3>
       <button class="btn btn-ghost" data-modal-close>&times;</button>
     </div>
     <form id="form-add-user-role" class="modal-body">
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Role Name</label>
-        <input type="text" name="name" required class="input w-full" placeholder="Enter role name" />
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Role Name</label
+        >
+        <input
+          type="text"
+          name="name"
+          required
+          class="input w-full"
+          placeholder="Enter role name"
+        />
       </div>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-        <textarea name="description" class="input w-full" rows="3" placeholder="Enter role description"></textarea>
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Description</label
+        >
+        <textarea
+          name="description"
+          class="input w-full"
+          rows="3"
+          placeholder="Enter role description"
+        ></textarea>
       </div>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-2">Permissions</label>
-        <div class="space-y-2">
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="dashboard" class="checkbox" />
-            <span>Dashboard</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="add_product" class="checkbox" />
-            <span>Add Product</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="view_product" class="checkbox" />
-            <span>View Product</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="edit_product" class="checkbox" />
-            <span>Edit Product</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="create_boq" class="checkbox" />
-            <span>Create BOQ</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="view_boq" class="checkbox" />
-            <span>View BOQ</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="create_request" class="checkbox" />
-            <span>Create Request</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="view_requests" class="checkbox" />
-            <span>View Requests</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="create_offer" class="checkbox" />
-            <span>Create Offer</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="view_offers" class="checkbox" />
-            <span>View Offers</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" name="permissions" value="view_reports" class="checkbox" />
-            <span>View Reports</span>
-          </label>
-        </div>
+        <label class="block text-sm font-medium text-slate-700 mb-2"
+          >Permissions</label
+        >
+        <div class="space-y-2" id="permissions-add-list"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="button" class="btn btn-outline" data-modal-close>
+          Cancel
+        </button>
         <button type="submit" class="btn btn-primary">Create Role</button>
       </div>
     </form>
   </div>
 </div>
 
+<!-- Edit User Role Modal -->
+<div id="modal-edit-user-role" class="modal-backdrop hidden">
+  <div class="modal" style="max-width: 600px">
+    <div class="modal-header">
+      <h3>Edit User Role</h3>
+      <button class="btn btn-ghost" data-modal-close>&times;</button>
+    </div>
+    <form id="form-edit-user-role" class="modal-body">
+      <input type="hidden" name="id" />
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Role Name</label
+        >
+        <input
+          type="text"
+          name="name"
+          required
+          class="input w-full"
+          placeholder="Enter role name"
+        />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1"
+          >Description</label
+        >
+        <textarea
+          name="description"
+          class="input w-full"
+          rows="3"
+          placeholder="Enter role description"
+        ></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-2"
+          >Permissions</label
+        >
+        <div class="space-y-2" id="permissions-edit-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>

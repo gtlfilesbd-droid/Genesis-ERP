@@ -1332,6 +1332,52 @@ export function exportToPDF(data, title, filename) {
 }
 
 // User Roles functions
+const permissionOptions = [
+  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'create_report', label: 'Create Report' },
+  { value: 'view_report', label: 'View Report' },
+  { value: 'export_report', label: 'Export Report' },
+  { value: 'users_create', label: 'Users - Create' },
+  { value: 'users_view', label: 'Users - View' },
+  { value: 'users_edit', label: 'Users - Edit' },
+  { value: 'users_delete', label: 'Users - Delete' },
+  { value: 'departments_create', label: 'Departments - Create' },
+  { value: 'departments_view', label: 'Departments - View' },
+  { value: 'departments_edit', label: 'Departments - Edit' },
+  { value: 'departments_delete', label: 'Departments - Delete' },
+  { value: 'designations_create', label: 'Designations - Create' },
+  { value: 'designations_view', label: 'Designations - View' },
+  { value: 'designations_edit', label: 'Designations - Edit' },
+  { value: 'designations_delete', label: 'Designations - Delete' },
+  { value: 'user_roles_create', label: 'User Roles - Create' },
+  { value: 'user_roles_view', label: 'User Roles - View' },
+  { value: 'user_roles_edit', label: 'User Roles - Edit' },
+  { value: 'user_roles_delete', label: 'User Roles - Delete' },
+  { value: 'products_create', label: 'Products - Create' },
+  { value: 'products_view', label: 'Products - View' },
+  { value: 'products_edit', label: 'Products - Edit' },
+  { value: 'products_delete', label: 'Products - Delete' },
+  { value: 'products_import', label: 'Products - Import' },
+  { value: 'products_export', label: 'Products - Export' },
+  { value: 'offers_create', label: 'Offers - Create' },
+  { value: 'offers_view', label: 'Offers - View' },
+  { value: 'boqs_create', label: 'BOQs - Create' },
+  { value: 'boqs_view', label: 'BOQs - View' },
+  { value: 'requests_create', label: 'Requests - Create' },
+  { value: 'requests_view', label: 'Requests - View' },
+];
+
+function renderPermissionOptions(targetEl, selected = []) {
+  if (!targetEl) return;
+  const selectedSet = new Set(selected);
+  targetEl.innerHTML = permissionOptions.map(opt => `
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="permissions" value="${opt.value}" class="checkbox" ${selectedSet.has(opt.value) ? 'checked' : ''}/>
+      <span>${opt.label}</span>
+    </label>
+  `).join('');
+}
+
 export async function loadUserRoles() {
   try {
     const roles = await apiCall('/admin/user-roles');
@@ -1444,7 +1490,9 @@ export function renderUserRoles(roles, container) {
         </tr>
       </thead>
       <tbody>
-        ${roles.map(role => `
+        ${roles.map(role => {
+          const permsAttr = encodeURIComponent(JSON.stringify(role.permissions || []));
+          return `
           <tr>
             <td><strong>${role.name || '--'}</strong></td>
             <td>${role.description || '--'}</td>
@@ -1456,11 +1504,12 @@ export function renderUserRoles(roles, container) {
             </td>
             <td>${new Date(role.createdAt).toLocaleDateString()}</td>
             <td>
-              <button class="btn btn-ghost btn-sm" data-edit-role="${role.id}" data-role-name="${role.name}" data-role-desc="${role.description || ''}" data-role-perms="${JSON.stringify(role.permissions || [])}">Edit</button>
+              <button class="btn btn-ghost btn-sm" data-edit-role="${role.id}" data-role-name="${role.name}" data-role-desc="${role.description || ''}" data-role-perms="${permsAttr}">Edit</button>
               <button class="btn btn-outline btn-sm text-red-600" data-delete-role="${role.id}">Delete</button>
             </td>
           </tr>
-        `).join('')}
+          `;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -1500,6 +1549,10 @@ export async function hydrateUserRolesPage(container) {
       addRoleModal?.classList.remove('hidden');
     });
     
+    // Render permission checkboxes for add form (initial)
+    const addPermsContainer = container.querySelector('#permissions-add-list');
+    renderPermissionOptions(addPermsContainer, []);
+
     // Wire up add role form
     addRoleForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1518,12 +1571,41 @@ export async function hydrateUserRolesPage(container) {
         showToast('Role created successfully', 'success');
         addRoleModal?.classList.add('hidden');
         addRoleForm.reset();
+        renderPermissionOptions(container.querySelector('#permissions-add-list'), []); // reset checkboxes
         await hydrateUserRolesPage(container);
       } catch (error) {
         showToast(error.message || 'Failed to create role', 'error');
       }
     });
     
+    // Wire up edit role form submission
+    const editRoleForm = container.querySelector('#form-edit-user-role');
+    const editRoleModal = container.querySelector('#modal-edit-user-role');
+    if (editRoleForm) {
+      editRoleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(editRoleForm);
+        const id = formData.get('id');
+        const name = formData.get('name')?.trim();
+        const description = formData.get('description')?.trim();
+        const permissions = formData.getAll('permissions');
+
+        if (!id || !name) {
+          showToast('Role ID and name are required', 'error');
+          return;
+        }
+
+        try {
+          await updateUserRole(id, { name, description, permissions });
+          showToast('Role updated', 'success');
+          editRoleModal?.classList.add('hidden');
+          await hydrateUserRolesPage(container);
+        } catch (error) {
+          showToast(error.message || 'Failed to update role', 'error');
+        }
+      });
+    }
+
     // Wire up assign role button
     const assignBtn = container.querySelector('[data-action="assign-role-to-user"]');
     assignBtn?.addEventListener('click', async () => {
@@ -1553,20 +1635,20 @@ export async function hydrateUserRolesPage(container) {
           const roleId = btn.dataset.editRole;
           const roleName = btn.dataset.roleName;
           const roleDesc = btn.dataset.roleDesc;
-          const rolePerms = JSON.parse(btn.dataset.rolePerms || '[]');
-          
-          // For now, use prompt for editing (can be enhanced with modal)
-          const newName = prompt('Enter new role name:', roleName);
-          if (newName && newName.trim() && newName !== roleName) {
-            updateUserRole(roleId, { name: newName.trim(), description: roleDesc, permissions: rolePerms })
-              .then(() => {
-                showToast('Role updated', 'success');
-                hydrateUserRolesPage(container);
-              })
-              .catch(error => {
-                showToast(error.message || 'Failed to update role', 'error');
-              });
-          }
+        const rolePerms = JSON.parse(decodeURIComponent(btn.dataset.rolePerms || '%5B%5D'));
+        const editModal = container.querySelector('#modal-edit-user-role');
+        const editForm = container.querySelector('#form-edit-user-role');
+        const editPermsContainer = container.querySelector('#permissions-edit-list');
+
+        if (!editModal || !editForm || !editPermsContainer) return;
+
+        // Populate form
+        editForm.querySelector('input[name="id"]').value = roleId;
+        editForm.querySelector('input[name="name"]').value = roleName || '';
+        editForm.querySelector('textarea[name="description"]').value = roleDesc || '';
+        renderPermissionOptions(editPermsContainer, rolePerms);
+
+        editModal.classList.remove('hidden');
         });
       });
       
