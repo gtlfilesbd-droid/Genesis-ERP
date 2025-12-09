@@ -2287,6 +2287,10 @@ async function hydrateUserSettingsPage(container) {
 }
 
 export function hydratePage(container) {
+  // Get current route from hash
+  const hash = window.location.hash.replace("#", "").trim();
+  const [route] = hash.split("?");
+  
   // Check if we're on login or signup page
   const loginForm = container.querySelector('#login-form');
   const signupForm = container.querySelector('#signup-form');
@@ -2305,20 +2309,16 @@ export function hydratePage(container) {
     return; // Don't run other hydration for signup page
   }
 
-  // Check if we're on admin dashboard
-  const adminDashboard = container.querySelector('#pending-users-table');
-  if (adminDashboard) {
+  // Route-based detection for admin pages
+  if (route === 'admin/dashboard') {
     import('./admin.js').then(({ hydrateAdminDashboard }) => {
       hydrateAdminDashboard(container);
     });
-    // Still run modals hydration for admin dashboard
     hydrateModals(container);
     return;
   }
 
-  // Check if we're on admin active users page
-  const adminActiveUsers = container.querySelector('#active-users-table');
-  if (adminActiveUsers) {
+  if (route === 'admin/active-users') {
     import('./admin.js').then(({ loadAndRenderActiveUsers }) => {
       loadAndRenderActiveUsers(container);
       container.querySelector('[data-action="refresh-active-users"]')?.addEventListener('click', () => {
@@ -2328,9 +2328,7 @@ export function hydratePage(container) {
     return;
   }
 
-  // Check if we're on admin pending users page
-  const adminPendingUsers = container.querySelector('#pending-users-table');
-  if (adminPendingUsers && !adminDashboard) {
+  if (route === 'admin/pending-users') {
     import('./admin.js').then(({ loadPendingUsers, renderPendingUsers }) => {
       loadPendingUsers().then(users => {
         renderPendingUsers(users, container);
@@ -2344,9 +2342,7 @@ export function hydratePage(container) {
     return;
   }
 
-  // Check if we're on admin total users page
-  const adminTotalUsers = container.querySelector('#total-users-table');
-  if (adminTotalUsers) {
+  if (route === 'admin/total-users') {
     import('./admin.js').then(({ loadAndRenderTotalUsers }) => {
       loadAndRenderTotalUsers(container);
       container.querySelector('[data-action="refresh-total-users"]')?.addEventListener('click', () => {
@@ -2356,55 +2352,31 @@ export function hydratePage(container) {
     return;
   }
 
-  // Check if we're on admin departments page
-  const adminDepartments = container.querySelector('#departments-table');
-  if (adminDepartments && !adminDashboard) {
-    import('./admin.js').then(({ loadDepartments, renderDepartments, hydrateAdminDashboard }) => {
-      loadDepartments().then(depts => {
-        renderDepartments(depts, container);
-      });
-      hydrateAdminDashboard(container);
+  if (route === 'admin/departments') {
+    import('./admin.js').then(({ loadDepartments, renderDepartments, hydrateDepartmentsPage }) => {
+      hydrateDepartmentsPage(container);
     });
     hydrateModals(container);
     return;
   }
 
-  // Check if we're on admin designations page
-  const adminDesignations = container.querySelector('#designations-table');
-  if (adminDesignations && !adminDashboard) {
-    import('./admin.js').then(({ loadDesignations, renderDesignations, loadDepartments, hydrateAdminDashboard }) => {
-      loadDesignations().then(desgs => {
-        renderDesignations(desgs, container);
-      });
-      loadDepartments().then(depts => {
-        const filterSelect = container.querySelector('#designations-filter-dept');
-        if (filterSelect) {
-          filterSelect.innerHTML = '<option value="">All Departments</option>' +
-            depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-          filterSelect.addEventListener('change', async () => {
-            const deptId = filterSelect.value;
-            const filtered = await loadDesignations(deptId || null);
-            renderDesignations(filtered, container);
-          });
-        }
-      });
-      hydrateAdminDashboard(container);
+  if (route === 'admin/designations') {
+    import('./admin.js').then(({ loadDesignations, renderDesignations, loadDepartments, hydrateDesignationsPage }) => {
+      hydrateDesignationsPage(container);
     });
     hydrateModals(container);
     return;
   }
 
-  // Check if we're on admin user roles page
-  const adminUserRoles = container.querySelector('#user-roles-table');
-  if (adminUserRoles) {
-    // User roles functionality will be added when server API is ready
-    showToast('User roles management coming soon', 'info');
+  if (route === 'admin/user-roles') {
+    import('./admin.js').then(({ hydrateUserRolesPage }) => {
+      hydrateUserRolesPage(container);
+    });
+    hydrateModals(container);
     return;
   }
 
-  // Check if we're on admin reporting page
-  const adminReporting = container.querySelector('[data-action="export-users-pdf"]');
-  if (adminReporting) {
+  if (route === 'admin/reporting') {
     import('./admin.js').then(({ loadAllUsers, loadDepartments, loadDesignations, exportToCSV, exportToPDF }) => {
       // Wire up export buttons
       container.querySelector('[data-action="export-users-pdf"]')?.addEventListener('click', async () => {
@@ -2432,10 +2404,14 @@ export function hydratePage(container) {
         exportToCSV(desgs, 'designations-report.csv');
       });
       container.querySelector('[data-action="export-user-roles-pdf"]')?.addEventListener('click', async () => {
-        showToast('User roles export coming soon', 'info');
+        const { loadUserRoles } = await import('./admin.js');
+        const roles = await loadUserRoles();
+        exportToPDF(roles, 'User Roles Report', 'user-roles-report.pdf');
       });
       container.querySelector('[data-action="export-user-roles-csv"]')?.addEventListener('click', async () => {
-        showToast('User roles export coming soon', 'info');
+        const { loadUserRoles } = await import('./admin.js');
+        const roles = await loadUserRoles();
+        exportToCSV(roles, 'user-roles-report.csv');
       });
       container.querySelector('[data-action="refresh-reports"]')?.addEventListener('click', () => {
         showToast('Reports refreshed', 'success');

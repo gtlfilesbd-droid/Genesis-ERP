@@ -213,6 +213,30 @@ async function initDatabase() {
       )
     `);
 
+    // User Roles table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_roles (
+        id TEXT PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT,
+        permissions TEXT,
+        createdAt TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
+    // User Role Assignments table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_role_assignments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        role_id TEXT NOT NULL,
+        assignedAt TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (role_id) REFERENCES user_roles(id) ON DELETE CASCADE,
+        UNIQUE(user_id, role_id)
+      )
+    `);
+
     // Create default admin user if no users exist
     const existingUsers = executeQueryAll('SELECT * FROM users LIMIT 1');
     if (existingUsers.length === 0) {
@@ -639,6 +663,206 @@ initDatabase().then(() => {
       stmt.run([id]);
       stmt.free();
       saveDatabase();
+
+      res.json({ success: true, id });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // User Roles CRUD
+  app.get('/api/admin/user-roles', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const results = executeQueryAll('SELECT * FROM user_roles ORDER BY name');
+      res.json(results || []);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/user-roles', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { name, description, permissions } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Role name is required' });
+      }
+
+      // Check if role already exists
+      const existing = executeQuery('SELECT * FROM user_roles WHERE name = ?', [name.trim()]);
+      if (existing) {
+        return res.status(400).json({ error: 'Role name already exists' });
+      }
+
+      const id = `ROLE-${Date.now()}`;
+      const createdAt = new Date().toISOString();
+      const permissionsJson = JSON.stringify(permissions || []);
+      const stmt = db.prepare('INSERT INTO user_roles (id, name, description, permissions, createdAt) VALUES (?, ?, ?, ?, ?)');
+      stmt.run([id, name.trim(), description || '', permissionsJson, createdAt]);
+      stmt.free();
+      saveDatabase();
+
+      const created = executeQuery('SELECT * FROM user_roles WHERE id = ?', [id]);
+      res.json({ success: true, role: created });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put('/api/admin/user-roles/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, permissions } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Role name is required' });
+      }
+
+      // Check if another role with same name exists
+      const existing = executeQuery('SELECT * FROM user_roles WHERE name = ? AND id != ?', [name.trim(), id]);
+      if (existing) {
+        return res.status(400).json({ error: 'Role name already exists' });
+      }
+
+      const permissionsJson = JSON.stringify(permissions || []);
+      const stmt = db.prepare('UPDATE user_roles SET name = ?, description = ?, permissions = ? WHERE id = ?');
+      stmt.run([name.trim(), description || '', permissionsJson, id]);
+      stmt.free();
+      saveDatabase();
+
+      const updated = executeQuery('SELECT * FROM user_roles WHERE id = ?', [id]);
+      if (!updated) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      res.json({ success: true, role: updated });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/user-roles/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = executeQuery('SELECT * FROM user_roles WHERE id = ?', [id]);
+      if (!existing) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const stmt = db.prepare('DELETE FROM user_roles WHERE id = ?');
+      stmt.run([id]);
+      stmt.free();
+      saveDatabase();
+
+      res.json({ success: true, id });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // User Role Assignments
+  app.get('/api/admin/user-role-assignments', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const userId = req.query.user_id;
+      let sql = `SELECT ura.*, ur.name as role_name, ur.permissions, u.name as user_name, u.email 
+                 FROM user_role_assignments ura 
+                 LEFT JOIN user_roles ur ON ura.role_id = ur.id 
+                 LEFT JOIN users u ON ura.user_id = u.id`;
+      let params = [];
+      
+      if (userId) {
+        sql += ' WHERE ura.user_id = ?';
+        params.push(userId);
+      }
+      
+      sql += ' ORDER BY ura.assignedAt DESC';
+      const results = executeQueryAll(sql, params);
+      
+      // Parse permissions JSON
+      const parsed = (results || []).map(item => ({
+        ...item,
+        permissions: item.permissions ? JSON.parse(item.permissions) : []
+      }));
+      
+      res.json(parsed);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/user-role-assignments', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { user_id, role_id } = req.body;
+      if (!user_id || !role_id) {
+        return res.status(400).json({ error: 'User ID and Role ID are required' });
+      }
+
+      // Check if user exists
+      const user = executeQuery('SELECT * FROM users WHERE id = ?', [user_id]);
+      if (!user) {
+        return res.status(400).json({ error: 'User not found' });
+      }
+
+      // Check if role exists
+      const role = executeQuery('SELECT * FROM user_roles WHERE id = ?', [role_id]);
+      if (!role) {
+        return res.status(400).json({ error: 'Role not found' });
+      }
+
+      // Check if assignment already exists
+      const existing = executeQuery('SELECT * FROM user_role_assignments WHERE user_id = ? AND role_id = ?', [user_id, role_id]);
+      if (existing) {
+        return res.status(400).json({ error: 'Role already assigned to this user' });
+      }
+
+      const id = `URA-${Date.now()}`;
+      const assignedAt = new Date().toISOString();
+      const stmt = db.prepare('INSERT INTO user_role_assignments (id, user_id, role_id, assignedAt) VALUES (?, ?, ?, ?)');
+      stmt.run([id, user_id, role_id, assignedAt]);
+      stmt.free();
+      saveDatabase();
+
+      // Update user permissions in users table (for quick access)
+      const rolePermissions = JSON.parse(role.permissions || '[]');
+      const userPermissions = JSON.stringify(rolePermissions);
+      const updateStmt = db.prepare('UPDATE users SET permissions = ? WHERE id = ?');
+      updateStmt.run([userPermissions, user_id]);
+      updateStmt.free();
+      saveDatabase();
+
+      const created = executeQuery(`SELECT ura.*, ur.name as role_name, u.name as user_name 
+                                    FROM user_role_assignments ura 
+                                    LEFT JOIN user_roles ur ON ura.role_id = ur.id 
+                                    LEFT JOIN users u ON ura.user_id = u.id 
+                                    WHERE ura.id = ?`, [id]);
+      res.json({ success: true, assignment: created });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/user-role-assignments/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = executeQuery('SELECT * FROM user_role_assignments WHERE id = ?', [id]);
+      if (!existing) {
+        return res.status(404).json({ error: 'Assignment not found' });
+      }
+
+      const stmt = db.prepare('DELETE FROM user_role_assignments WHERE id = ?');
+      stmt.run([id]);
+      stmt.free();
+      saveDatabase();
+
+      // Clear user permissions if no roles assigned
+      const remainingAssignments = executeQueryAll('SELECT * FROM user_role_assignments WHERE user_id = ?', [existing.user_id]);
+      if (remainingAssignments.length === 0) {
+        const updateStmt = db.prepare('UPDATE users SET permissions = NULL WHERE id = ?');
+        updateStmt.run([existing.user_id]);
+        updateStmt.free();
+        saveDatabase();
+      }
 
       res.json({ success: true, id });
     } catch (err) {

@@ -268,40 +268,8 @@ export function renderDepartments(departments, container) {
     </table>
   `;
 
-  // Wire up edit/delete buttons
-  tableContainer.querySelectorAll('[data-edit-dept]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const deptId = btn.dataset.editDept;
-      const deptName = btn.dataset.deptName;
-      const newName = prompt('Enter new department name:', deptName);
-      if (newName && newName.trim() && newName !== deptName) {
-        updateDepartment(deptId, newName.trim())
-          .then(() => {
-            showToast('Department updated', 'success');
-            refreshAdminDashboard();
-          })
-          .catch(error => {
-            showToast(error.message || 'Failed to update department', 'error');
-          });
-      }
-    });
-  });
-
-  tableContainer.querySelectorAll('[data-delete-dept]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const deptId = btn.dataset.deleteDept;
-      if (confirm('Are you sure you want to delete this department? This will also delete all associated designations.')) {
-        deleteDepartment(deptId)
-          .then(() => {
-            showToast('Department deleted', 'success');
-            refreshAdminDashboard();
-          })
-          .catch(error => {
-            showToast(error.message || 'Failed to delete department', 'error');
-          });
-      }
-    });
-  });
+  // Wire up edit/delete buttons - these will be re-wired by the page-specific hydration
+  // The event handlers are set up in hydrateDepartmentsPage()
 }
 
 // Render designations table
@@ -340,52 +308,161 @@ export function renderDesignations(designations, container) {
     </table>
   `;
 
-  // Wire up edit/delete buttons
-  tableContainer.querySelectorAll('[data-edit-desg]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const desgId = btn.dataset.editDesg;
-      const desgTitle = btn.dataset.desgTitle;
-      const desgDept = btn.dataset.desgDept;
-      
-      const departments = await loadDepartments();
-      const deptSelect = departments.map(d => 
-        `<option value="${d.id}" ${d.id === desgDept ? 'selected' : ''}>${d.name}</option>`
-      ).join('');
-      
-      const newTitle = prompt('Enter new designation title:', desgTitle);
-      if (newTitle && newTitle.trim() && newTitle !== desgTitle) {
-        updateDesignation(desgId, desgDept, newTitle.trim())
-          .then(() => {
-            showToast('Designation updated', 'success');
-            refreshAdminDashboard();
-          })
-          .catch(error => {
-            showToast(error.message || 'Failed to update designation', 'error');
-          });
-      }
-    });
-  });
+  // Wire up edit/delete buttons - these will be re-wired by the page-specific hydration
+  // The event handlers are set up in hydrateDesignationsPage()
+}
 
-  tableContainer.querySelectorAll('[data-delete-desg]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const desgId = btn.dataset.deleteDesg;
-      if (confirm('Are you sure you want to delete this designation?')) {
-        deleteDesignation(desgId)
-          .then(() => {
-            showToast('Designation deleted', 'success');
-            refreshAdminDashboard();
-          })
-          .catch(error => {
-            showToast(error.message || 'Failed to delete designation', 'error');
-          });
-      }
-    });
-  });
+// Page-specific refresh functions
+export async function refreshDepartmentsPage(container) {
+  if (!container) container = document.getElementById('app-view');
+  if (!container) return;
+
+  try {
+    const departments = await loadDepartments();
+    renderDepartments(departments, container);
+    
+    // Re-wire edit/delete buttons
+    const tableContainer = container.querySelector('#departments-table');
+    if (tableContainer) {
+      tableContainer.querySelectorAll('[data-edit-dept]').forEach(btn => {
+        // Remove existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', () => {
+          const deptId = newBtn.dataset.editDept;
+          const deptName = newBtn.dataset.deptName;
+          const newName = prompt('Enter new department name:', deptName);
+          if (newName && newName.trim() && newName !== deptName) {
+            updateDepartment(deptId, newName.trim())
+              .then(() => {
+                showToast('Department updated', 'success');
+                refreshDepartmentsPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to update department', 'error');
+              });
+          }
+        });
+      });
+
+      tableContainer.querySelectorAll('[data-delete-dept]').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', () => {
+          const deptId = newBtn.dataset.deleteDept;
+          if (confirm('Are you sure you want to delete this department? This will also delete all associated designations.')) {
+            deleteDepartment(deptId)
+              .then(() => {
+                showToast('Department deleted', 'success');
+                refreshDepartmentsPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to delete department', 'error');
+              });
+          }
+        });
+      });
+    }
+  } catch (error) {
+    console.error('[Admin] Error refreshing departments page:', error);
+    showToast('Failed to refresh departments', 'error');
+  }
+}
+
+export async function refreshDesignationsPage(container) {
+  if (!container) container = document.getElementById('app-view');
+  if (!container) return;
+
+  try {
+    const filterSelect = container.querySelector('#designations-filter-dept');
+    const deptId = filterSelect?.value || null;
+    const designations = await loadDesignations(deptId);
+    renderDesignations(designations, container);
+    
+    // Re-wire edit/delete buttons
+    const tableContainer = container.querySelector('#designations-table');
+    if (tableContainer) {
+      tableContainer.querySelectorAll('[data-edit-desg]').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', async () => {
+          const desgId = newBtn.dataset.editDesg;
+          const desgTitle = newBtn.dataset.desgTitle;
+          const desgDept = newBtn.dataset.desgDept;
+          
+          const departments = await loadDepartments();
+          const newTitle = prompt('Enter new designation title:', desgTitle);
+          if (newTitle && newTitle.trim() && newTitle !== desgTitle) {
+            updateDesignation(desgId, desgDept, newTitle.trim())
+              .then(() => {
+                showToast('Designation updated', 'success');
+                refreshDesignationsPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to update designation', 'error');
+              });
+          }
+        });
+      });
+
+      tableContainer.querySelectorAll('[data-delete-desg]').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', () => {
+          const desgId = newBtn.dataset.deleteDesg;
+          if (confirm('Are you sure you want to delete this designation?')) {
+            deleteDesignation(desgId)
+              .then(() => {
+                showToast('Designation deleted', 'success');
+                refreshDesignationsPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to delete designation', 'error');
+              });
+          }
+        });
+      });
+    }
+  } catch (error) {
+    console.error('[Admin] Error refreshing designations page:', error);
+    showToast('Failed to refresh designations', 'error');
+  }
+}
+
+export async function refreshActiveUsersPage(container) {
+  if (!container) container = document.getElementById('app-view');
+  if (!container) return;
+
+  try {
+    const allUsers = await loadAllUsers();
+    const activeUsers = allUsers.filter(u => u.status === 'approved');
+    renderActiveUsers(activeUsers, container);
+  } catch (error) {
+    console.error('[Admin] Error refreshing active users page:', error);
+    showToast('Failed to refresh active users', 'error');
+  }
+}
+
+export async function refreshTotalUsersPage(container) {
+  if (!container) container = document.getElementById('app-view');
+  if (!container) return;
+
+  try {
+    const allUsers = await loadAllUsers();
+    renderTotalUsers(allUsers, container);
+  } catch (error) {
+    console.error('[Admin] Error refreshing total users page:', error);
+    showToast('Failed to refresh users', 'error');
+  }
 }
 
 // Refresh admin dashboard
-export async function refreshAdminDashboard() {
-  const container = document.getElementById('app-view');
+export async function refreshAdminDashboard(container) {
+  if (!container) container = document.getElementById('app-view');
   if (!container) return;
 
   try {
@@ -430,7 +507,7 @@ export async function refreshAdminDashboard() {
 // Hydrate admin dashboard
 export function hydrateAdminDashboard(container) {
   // Load and render data
-  refreshAdminDashboard();
+  refreshAdminDashboard(container);
 
   // Wire up modals
   const addDeptBtn = container.querySelector('[data-action="add-department"]');
@@ -473,7 +550,7 @@ export function hydrateAdminDashboard(container) {
       showToast('Department added successfully', 'success');
       addDeptModal?.classList.add('hidden');
       addDeptForm.reset();
-      refreshAdminDashboard();
+      refreshAdminDashboard(container);
     } catch (error) {
       showToast(error.message || 'Failed to add department', 'error');
     }
@@ -496,7 +573,7 @@ export function hydrateAdminDashboard(container) {
       showToast('Designation added successfully', 'success');
       addDesgModal?.classList.add('hidden');
       addDesgForm.reset();
-      refreshAdminDashboard();
+      refreshAdminDashboard(container);
     } catch (error) {
       showToast(error.message || 'Failed to add designation', 'error');
     }
@@ -505,7 +582,7 @@ export function hydrateAdminDashboard(container) {
   // Refresh button
   const refreshBtn = container.querySelector('[data-action="refresh-admin"]');
   refreshBtn?.addEventListener('click', () => {
-    refreshAdminDashboard();
+    refreshAdminDashboard(container);
   });
 }
 
@@ -628,25 +705,111 @@ export function renderTotalUsers(users, container) {
 
 // Load and render active users
 export async function loadAndRenderActiveUsers(container) {
-  try {
-    const allUsers = await loadAllUsers();
-    const activeUsers = allUsers.filter(u => u.status === 'approved');
-    renderActiveUsers(activeUsers, container);
-  } catch (error) {
-    console.error('[Admin] Error loading active users:', error);
-    showToast('Failed to load active users', 'error');
-  }
+  await refreshActiveUsersPage(container);
 }
 
 // Load and render total users
 export async function loadAndRenderTotalUsers(container) {
-  try {
-    const allUsers = await loadAllUsers();
-    renderTotalUsers(allUsers, container);
-  } catch (error) {
-    console.error('[Admin] Error loading total users:', error);
-    showToast('Failed to load users', 'error');
+  await refreshTotalUsersPage(container);
+}
+
+// Hydrate departments page
+export async function hydrateDepartmentsPage(container) {
+  await refreshDepartmentsPage(container);
+  
+  // Wire up modals and buttons
+  const addDeptBtn = container.querySelector('[data-action="add-department"]');
+  const addDeptModal = container.querySelector('#modal-add-department');
+  const addDeptForm = container.querySelector('#form-add-department');
+  const refreshBtn = container.querySelector('[data-action="refresh-departments"]');
+
+  addDeptBtn?.addEventListener('click', () => {
+    addDeptModal?.classList.remove('hidden');
+  });
+
+  addDeptForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(addDeptForm);
+    const name = formData.get('name')?.trim();
+
+    if (!name) {
+      showToast('Department name is required', 'error');
+      return;
+    }
+
+    try {
+      await addDepartment(name);
+      showToast('Department added successfully', 'success');
+      addDeptModal?.classList.add('hidden');
+      addDeptForm.reset();
+      await refreshDepartmentsPage(container);
+    } catch (error) {
+      showToast(error.message || 'Failed to add department', 'error');
+    }
+  });
+
+  refreshBtn?.addEventListener('click', () => {
+    refreshDepartmentsPage(container);
+  });
+}
+
+// Hydrate designations page
+export async function hydrateDesignationsPage(container) {
+  await refreshDesignationsPage(container);
+  
+  // Load departments for filter and modal
+  const departments = await loadDepartments();
+  
+  // Wire up filter
+  const filterSelect = container.querySelector('#designations-filter-dept');
+  if (filterSelect) {
+    filterSelect.innerHTML = '<option value="">All Departments</option>' +
+      departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    filterSelect.addEventListener('change', async () => {
+      await refreshDesignationsPage(container);
+    });
   }
+  
+  // Wire up modals and buttons
+  const addDesgBtn = container.querySelector('[data-action="add-designation"]');
+  const addDesgModal = container.querySelector('#modal-add-designation');
+  const addDesgForm = container.querySelector('#form-add-designation');
+  const refreshBtn = container.querySelector('[data-action="refresh-designations"]');
+  const deptSelect = container.querySelector('#designation-dept-select');
+
+  addDesgBtn?.addEventListener('click', () => {
+    if (deptSelect) {
+      deptSelect.innerHTML = '<option value="">Select department</option>' +
+        departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    }
+    addDesgModal?.classList.remove('hidden');
+  });
+
+  addDesgForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(addDesgForm);
+    const departmentId = formData.get('department_id');
+    const title = formData.get('title')?.trim();
+
+    if (!departmentId || !title) {
+      showToast('Department and title are required', 'error');
+      return;
+    }
+
+    try {
+      await addDesignation(departmentId, title);
+      showToast('Designation added successfully', 'success');
+      addDesgModal?.classList.add('hidden');
+      addDesgForm.reset();
+      await refreshDesignationsPage(container);
+    } catch (error) {
+      showToast(error.message || 'Failed to add designation', 'error');
+    }
+  });
+
+  refreshBtn?.addEventListener('click', () => {
+    refreshDesignationsPage(container);
+  });
 }
 
 // Export functions for reports
@@ -683,5 +846,272 @@ export function exportToPDF(data, title, filename) {
   // In production, you might want to use a library like jsPDF
   showToast('PDF export: Use browser print function (Ctrl+P)', 'info');
   window.print();
+}
+
+// User Roles functions
+export async function loadUserRoles() {
+  try {
+    const roles = await apiCall('/admin/user-roles');
+    // Parse permissions JSON
+    return roles.map(role => ({
+      ...role,
+      permissions: role.permissions ? JSON.parse(role.permissions) : []
+    }));
+  } catch (error) {
+    console.error('[Admin] Error loading user roles:', error);
+    throw error;
+  }
+}
+
+export async function createUserRole(roleData) {
+  try {
+    const result = await apiCall('/admin/user-roles', {
+      method: 'POST',
+      body: JSON.stringify(roleData),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error creating user role:', error);
+    throw error;
+  }
+}
+
+export async function updateUserRole(id, roleData) {
+  try {
+    const result = await apiCall(`/admin/user-roles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(roleData),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error updating user role:', error);
+    throw error;
+  }
+}
+
+export async function deleteUserRole(id) {
+  try {
+    const result = await apiCall(`/admin/user-roles/${id}`, {
+      method: 'DELETE',
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error deleting user role:', error);
+    throw error;
+  }
+}
+
+export async function loadUserRoleAssignments(userId = null) {
+  try {
+    const url = userId 
+      ? `/admin/user-role-assignments?user_id=${userId}`
+      : '/admin/user-role-assignments';
+    const assignments = await apiCall(url);
+    return assignments;
+  } catch (error) {
+    console.error('[Admin] Error loading user role assignments:', error);
+    throw error;
+  }
+}
+
+export async function assignRoleToUser(userId, roleId) {
+  try {
+    const result = await apiCall('/admin/user-role-assignments', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, role_id: roleId }),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error assigning role to user:', error);
+    throw error;
+  }
+}
+
+export async function removeRoleAssignment(id) {
+  try {
+    const result = await apiCall(`/admin/user-role-assignments/${id}`, {
+      method: 'DELETE',
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error removing role assignment:', error);
+    throw error;
+  }
+}
+
+// Render user roles table
+export function renderUserRoles(roles, container) {
+  const tableContainer = container.querySelector('#user-roles-table');
+  if (!tableContainer) return;
+
+  if (!roles || roles.length === 0) {
+    tableContainer.innerHTML = '<div class="text-center text-slate-500 p-4">No user roles. Create one to get started.</div>';
+    return;
+  }
+
+  tableContainer.innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Permissions</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${roles.map(role => `
+          <tr>
+            <td><strong>${role.name || '--'}</strong></td>
+            <td>${role.description || '--'}</td>
+            <td>
+              <div class="flex flex-wrap gap-1">
+                ${(role.permissions || []).map(p => `<span class="status-pill approved">${p}</span>`).join('')}
+                ${(!role.permissions || role.permissions.length === 0) ? '<span class="text-slate-400">No permissions</span>' : ''}
+              </div>
+            </td>
+            <td>${new Date(role.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" data-edit-role="${role.id}" data-role-name="${role.name}" data-role-desc="${role.description || ''}" data-role-perms="${JSON.stringify(role.permissions || [])}">Edit</button>
+              <button class="btn btn-outline btn-sm text-red-600" data-delete-role="${role.id}">Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Hydrate user roles page
+export async function hydrateUserRolesPage(container) {
+  try {
+    // Load and render roles
+    const roles = await loadUserRoles();
+    renderUserRoles(roles, container);
+    
+    // Load users and roles for assignment dropdowns
+    const [allUsers] = await Promise.all([loadAllUsers()]);
+    
+    const userSelect = container.querySelector('#assign-role-user-select');
+    const roleSelect = container.querySelector('#assign-role-role-select');
+    
+    if (userSelect) {
+      userSelect.innerHTML = '<option value="">Select user</option>' +
+        allUsers.filter(u => u.status === 'approved').map(u => 
+          `<option value="${u.id}">${u.name} (${u.email})</option>`
+        ).join('');
+    }
+    
+    if (roleSelect) {
+      roleSelect.innerHTML = '<option value="">Select role</option>' +
+        roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    }
+    
+    // Wire up add role button
+    const addRoleBtn = container.querySelector('[data-action="add-user-role"]');
+    const addRoleModal = container.querySelector('#modal-add-user-role');
+    const addRoleForm = container.querySelector('#form-add-user-role');
+    
+    addRoleBtn?.addEventListener('click', () => {
+      addRoleModal?.classList.remove('hidden');
+    });
+    
+    // Wire up add role form
+    addRoleForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(addRoleForm);
+      const name = formData.get('name')?.trim();
+      const description = formData.get('description')?.trim();
+      const permissions = formData.getAll('permissions');
+      
+      if (!name) {
+        showToast('Role name is required', 'error');
+        return;
+      }
+      
+      try {
+        await createUserRole({ name, description, permissions });
+        showToast('Role created successfully', 'success');
+        addRoleModal?.classList.add('hidden');
+        addRoleForm.reset();
+        await hydrateUserRolesPage(container);
+      } catch (error) {
+        showToast(error.message || 'Failed to create role', 'error');
+      }
+    });
+    
+    // Wire up assign role button
+    const assignBtn = container.querySelector('[data-action="assign-role-to-user"]');
+    assignBtn?.addEventListener('click', async () => {
+      const userId = userSelect?.value;
+      const roleId = roleSelect?.value;
+      
+      if (!userId || !roleId) {
+        showToast('Please select both user and role', 'error');
+        return;
+      }
+      
+      try {
+        await assignRoleToUser(userId, roleId);
+        showToast('Role assigned successfully', 'success');
+        userSelect.value = '';
+        roleSelect.value = '';
+      } catch (error) {
+        showToast(error.message || 'Failed to assign role', 'error');
+      }
+    });
+    
+    // Wire up edit/delete buttons
+    const tableContainer = container.querySelector('#user-roles-table');
+    if (tableContainer) {
+      tableContainer.querySelectorAll('[data-edit-role]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const roleId = btn.dataset.editRole;
+          const roleName = btn.dataset.roleName;
+          const roleDesc = btn.dataset.roleDesc;
+          const rolePerms = JSON.parse(btn.dataset.rolePerms || '[]');
+          
+          // For now, use prompt for editing (can be enhanced with modal)
+          const newName = prompt('Enter new role name:', roleName);
+          if (newName && newName.trim() && newName !== roleName) {
+            updateUserRole(roleId, { name: newName.trim(), description: roleDesc, permissions: rolePerms })
+              .then(() => {
+                showToast('Role updated', 'success');
+                hydrateUserRolesPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to update role', 'error');
+              });
+          }
+        });
+      });
+      
+      tableContainer.querySelectorAll('[data-delete-role]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const roleId = btn.dataset.deleteRole;
+          if (confirm('Are you sure you want to delete this role? This will remove all assignments.')) {
+            deleteUserRole(roleId)
+              .then(() => {
+                showToast('Role deleted', 'success');
+                hydrateUserRolesPage(container);
+              })
+              .catch(error => {
+                showToast(error.message || 'Failed to delete role', 'error');
+              });
+          }
+        });
+      });
+    }
+    
+    // Refresh button
+    const refreshBtn = container.querySelector('[data-action="refresh-user-roles"]');
+    refreshBtn?.addEventListener('click', () => {
+      hydrateUserRolesPage(container);
+    });
+  } catch (error) {
+    console.error('[Admin] Error hydrating user roles page:', error);
+    showToast('Failed to load user roles', 'error');
+  }
 }
 
