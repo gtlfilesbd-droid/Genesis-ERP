@@ -256,6 +256,74 @@ async function initDatabase() {
       console.log('[Server] Default admin user created: username=admin, password=admin123');
     }
 
+    // Seed default departments if table is empty
+    const existingDepartments = executeQueryAll('SELECT * FROM departments LIMIT 1');
+    if (existingDepartments.length === 0) {
+      console.log('[Server] No departments found, seeding default departments...');
+      const defaultDepartments = [
+        { id: 'DEPT-001', name: 'Information Technology' },
+        { id: 'DEPT-002', name: 'Human Resources' },
+        { id: 'DEPT-003', name: 'Finance' },
+        { id: 'DEPT-004', name: 'Operations' },
+        { id: 'DEPT-005', name: 'Sales & Marketing' }
+      ];
+      
+      const deptStmt = db.prepare('INSERT INTO departments (id, name, createdAt) VALUES (?, ?, datetime("now"))');
+      for (const dept of defaultDepartments) {
+        try {
+          deptStmt.run([dept.id, dept.name]);
+          console.log('[Server] Created department:', dept.name);
+        } catch (err) {
+          console.warn('[Server] Failed to create department', dept.name, ':', err.message);
+        }
+      }
+      deptStmt.free();
+      console.log('[Server] Default departments seeded');
+    }
+
+    // Seed default designations if table is empty
+    const existingDesignations = executeQueryAll('SELECT * FROM designations LIMIT 1');
+    if (existingDesignations.length === 0) {
+      console.log('[Server] No designations found, seeding default designations...');
+      
+      // Get all departments to assign designations
+      const allDepartments = executeQueryAll('SELECT * FROM departments ORDER BY name');
+      
+      if (allDepartments.length > 0) {
+        const defaultDesignations = [
+          { department_id: allDepartments[0].id, title: 'Software Engineer' },
+          { department_id: allDepartments[0].id, title: 'Senior Software Engineer' },
+          { department_id: allDepartments[0].id, title: 'Team Lead' },
+          { department_id: allDepartments[0].id, title: 'Project Manager' },
+          { department_id: allDepartments[1]?.id || allDepartments[0].id, title: 'HR Manager' },
+          { department_id: allDepartments[1]?.id || allDepartments[0].id, title: 'HR Executive' },
+          { department_id: allDepartments[2]?.id || allDepartments[0].id, title: 'Finance Manager' },
+          { department_id: allDepartments[2]?.id || allDepartments[0].id, title: 'Accountant' },
+          { department_id: allDepartments[3]?.id || allDepartments[0].id, title: 'Operations Manager' },
+          { department_id: allDepartments[3]?.id || allDepartments[0].id, title: 'Operations Executive' },
+          { department_id: allDepartments[4]?.id || allDepartments[0].id, title: 'Sales Manager' },
+          { department_id: allDepartments[4]?.id || allDepartments[0].id, title: 'Marketing Executive' }
+        ];
+        
+        const desgStmt = db.prepare('INSERT INTO designations (id, department_id, title, createdAt) VALUES (?, ?, ?, datetime("now"))');
+        let desgCounter = 1;
+        for (const desg of defaultDesignations) {
+          try {
+            const desgId = `DESG-${String(desgCounter).padStart(3, '0')}`;
+            desgStmt.run([desgId, desg.department_id, desg.title]);
+            console.log('[Server] Created designation:', desg.title, 'for department', desg.department_id);
+            desgCounter++;
+          } catch (err) {
+            console.warn('[Server] Failed to create designation', desg.title, ':', err.message);
+          }
+        }
+        desgStmt.free();
+        console.log('[Server] Default designations seeded');
+      } else {
+        console.warn('[Server] Cannot seed designations: No departments found');
+      }
+    }
+
     // Save initial schema
     saveDatabase();
     console.log('[Server] Database initialized');
@@ -726,29 +794,57 @@ initDatabase().then(() => {
   // Public endpoints for signup form
   app.get('/api/departments', (req, res) => {
     try {
+      console.log('[Server] GET /api/departments - Fetching all departments');
       const results = executeQueryAll('SELECT * FROM departments ORDER BY name');
+      console.log('[Server] Found', results.length, 'departments');
+      
+      if (results.length === 0) {
+        console.warn('[Server] No departments found in database');
+      }
+      
       res.json(results || []);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error('[Server] Error fetching departments:', err);
+      res.status(500).json({ 
+        error: 'Failed to fetch departments',
+        message: err.message 
+      });
     }
   });
 
   app.get('/api/designations', (req, res) => {
     try {
       const departmentId = req.query.department_id;
+      console.log('[Server] GET /api/designations - department_id:', departmentId || 'all');
+      
       let sql = 'SELECT d.*, dept.name as department_name FROM designations d LEFT JOIN departments dept ON d.department_id = dept.id';
       let params = [];
       
       if (departmentId) {
         sql += ' WHERE d.department_id = ?';
         params.push(departmentId);
+        console.log('[Server] Filtering designations by department_id:', departmentId);
       }
       
       sql += ' ORDER BY dept.name, d.title';
       const results = executeQueryAll(sql, params);
+      console.log('[Server] Found', results.length, 'designations');
+      
+      if (results.length === 0) {
+        if (departmentId) {
+          console.warn('[Server] No designations found for department_id:', departmentId);
+        } else {
+          console.warn('[Server] No designations found in database');
+        }
+      }
+      
       res.json(results || []);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error('[Server] Error fetching designations:', err);
+      res.status(500).json({ 
+        error: 'Failed to fetch designations',
+        message: err.message 
+      });
     }
   });
 

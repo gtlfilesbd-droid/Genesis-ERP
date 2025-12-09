@@ -1,5 +1,5 @@
 import { initRouter } from "./router.js";
-import { mountFrame, hydratePage } from "./ui.js";
+import { mountFrame, hydratePage, unmountFrame } from "./ui.js";
 
 // Suppress browser extension listener errors (not caused by our code)
 // This error is harmless and comes from browser extensions interfering with the page
