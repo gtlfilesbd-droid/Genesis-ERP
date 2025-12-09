@@ -34,13 +34,59 @@ export async function loadPendingUsers() {
   }
 }
 
-// Load all users
-export async function loadAllUsers() {
+// Load all users with optional filters
+export async function loadAllUsers(filters = {}) {
   try {
-    const users = await apiCall('/admin/users');
+    const params = new URLSearchParams();
+    if (filters.department_id) params.append('department_id', filters.department_id);
+    if (filters.designation_id) params.append('designation_id', filters.designation_id);
+    if (filters.status) params.append('status', filters.status);
+    
+    const url = params.toString() 
+      ? `/admin/users?${params.toString()}`
+      : '/admin/users';
+    const users = await apiCall(url);
     return users;
   } catch (error) {
     console.error('[Admin] Error loading users:', error);
+    throw error;
+  }
+}
+
+// Load single user by ID
+export async function loadUserById(id) {
+  try {
+    const user = await apiCall(`/admin/users/${id}`);
+    return user;
+  } catch (error) {
+    console.error('[Admin] Error loading user:', error);
+    throw error;
+  }
+}
+
+// Update user
+export async function updateUser(id, userData) {
+  try {
+    const result = await apiCall(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error updating user:', error);
+    throw error;
+  }
+}
+
+// Delete user
+export async function deleteUser(id) {
+  try {
+    const result = await apiCall(`/admin/users/${id}`, {
+      method: 'DELETE',
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error deleting user:', error);
     throw error;
   }
 }
@@ -183,6 +229,10 @@ export function renderPendingUsers(users, container) {
           <th>Name</th>
           <th>Email</th>
           <th>Username</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Mobile</th>
+          <th>Address</th>
           <th>Registered</th>
           <th>Actions</th>
         </tr>
@@ -193,8 +243,13 @@ export function renderPendingUsers(users, container) {
             <td>${user.name || '--'}</td>
             <td>${user.email || '--'}</td>
             <td>${user.username || '--'}</td>
+            <td>${user.department_name || '--'}</td>
+            <td>${user.designation_title || '--'}</td>
+            <td>${user.phone || '--'}</td>
+            <td>${user.address ? (user.address.length > 30 ? user.address.substring(0, 30) + '...' : user.address) : '--'}</td>
             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
             <td>
+              <button class="btn btn-ghost btn-sm" data-edit-user="${user.id}">Edit</button>
               <button class="btn btn-primary btn-sm" data-approve-user="${user.id}">Approve</button>
               <button class="btn btn-outline btn-sm" data-reject-user="${user.id}">Reject</button>
             </td>
@@ -211,7 +266,13 @@ export function renderPendingUsers(users, container) {
       try {
         await updateUserStatus(userId, 'approved');
         showToast('User approved successfully', 'success');
-        refreshAdminDashboard();
+        const route = window.location.hash.replace("#", "").trim();
+        if (route === 'admin/pending-users') {
+          await refreshPendingUsersPage(container);
+          wireUserActions(container, 'pending');
+        } else {
+          refreshAdminDashboard(container);
+        }
       } catch (error) {
         showToast(error.message || 'Failed to approve user', 'error');
       }
@@ -223,9 +284,15 @@ export function renderPendingUsers(users, container) {
       const userId = btn.dataset.rejectUser;
       if (confirm('Are you sure you want to reject this user?')) {
         try {
-          await updateUserStatus(userId, 'rejected');
-          showToast('User rejected', 'success');
-          refreshAdminDashboard();
+        await updateUserStatus(userId, 'rejected');
+        showToast('User rejected', 'success');
+        const route = window.location.hash.replace("#", "").trim();
+        if (route === 'admin/pending-users') {
+          await refreshPendingUsersPage(container);
+          wireUserActions(container, 'pending');
+        } else {
+          refreshAdminDashboard(container);
+        }
         } catch (error) {
           showToast(error.message || 'Failed to reject user', 'error');
         }
@@ -438,9 +505,28 @@ export async function refreshActiveUsersPage(container) {
   if (!container) return;
 
   try {
-    const allUsers = await loadAllUsers();
-    const activeUsers = allUsers.filter(u => u.status === 'approved');
-    renderActiveUsers(activeUsers, container);
+    // Get filters
+    const deptFilter = container.querySelector('#active-users-filter-dept')?.value || '';
+    const desgFilter = container.querySelector('#active-users-filter-desg')?.value || '';
+    const searchTerm = container.querySelector('#active-users-search')?.value?.toLowerCase() || '';
+    
+    const filters = { status: 'approved' };
+    if (deptFilter) filters.department_id = deptFilter;
+    if (desgFilter) filters.designation_id = desgFilter;
+    
+    let users = await loadAllUsers(filters);
+    
+    // Apply search filter
+    if (searchTerm) {
+      users = users.filter(u => 
+        (u.name || '').toLowerCase().includes(searchTerm) ||
+        (u.email || '').toLowerCase().includes(searchTerm) ||
+        (u.username || '').toLowerCase().includes(searchTerm) ||
+        (u.phone || '').toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    renderActiveUsers(users, container);
   } catch (error) {
     console.error('[Admin] Error refreshing active users page:', error);
     showToast('Failed to refresh active users', 'error');
@@ -452,8 +538,30 @@ export async function refreshTotalUsersPage(container) {
   if (!container) return;
 
   try {
-    const allUsers = await loadAllUsers();
-    renderTotalUsers(allUsers, container);
+    // Get filters
+    const statusFilter = container.querySelector('#total-users-filter-status')?.value || '';
+    const deptFilter = container.querySelector('#total-users-filter-dept')?.value || '';
+    const desgFilter = container.querySelector('#total-users-filter-desg')?.value || '';
+    const searchTerm = container.querySelector('#total-users-search')?.value?.toLowerCase() || '';
+    
+    const filters = {};
+    if (statusFilter) filters.status = statusFilter;
+    if (deptFilter) filters.department_id = deptFilter;
+    if (desgFilter) filters.designation_id = desgFilter;
+    
+    let users = await loadAllUsers(filters);
+    
+    // Apply search filter
+    if (searchTerm) {
+      users = users.filter(u => 
+        (u.name || '').toLowerCase().includes(searchTerm) ||
+        (u.email || '').toLowerCase().includes(searchTerm) ||
+        (u.username || '').toLowerCase().includes(searchTerm) ||
+        (u.phone || '').toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    renderTotalUsers(users, container);
   } catch (error) {
     console.error('[Admin] Error refreshing total users page:', error);
     showToast('Failed to refresh users', 'error');
@@ -603,6 +711,10 @@ export function renderActiveUsers(users, container) {
           <th>Name</th>
           <th>Email</th>
           <th>Username</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Mobile</th>
+          <th>Address</th>
           <th>Role</th>
           <th>Status</th>
           <th>Registered</th>
@@ -615,11 +727,16 @@ export function renderActiveUsers(users, container) {
             <td>${user.name || '--'}</td>
             <td>${user.email || '--'}</td>
             <td>${user.username || '--'}</td>
+            <td>${user.department_name || '--'}</td>
+            <td>${user.designation_title || '--'}</td>
+            <td>${user.phone || '--'}</td>
+            <td>${user.address ? (user.address.length > 30 ? user.address.substring(0, 30) + '...' : user.address) : '--'}</td>
             <td>${user.role || 'user'}</td>
             <td><span class="status-pill ${user.status || 'approved'}">${user.status || 'approved'}</span></td>
             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
             <td>
-              <button class="btn btn-ghost btn-sm" data-view-user="${user.id}">View</button>
+              <button class="btn btn-ghost btn-sm" data-edit-user="${user.id}">Edit</button>
+              <button class="btn btn-outline btn-sm text-red-600" data-delete-user="${user.id}">Delete</button>
             </td>
           </tr>
         `).join('')}
@@ -645,6 +762,10 @@ export function renderTotalUsers(users, container) {
           <th>Name</th>
           <th>Email</th>
           <th>Username</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Mobile</th>
+          <th>Address</th>
           <th>Role</th>
           <th>Status</th>
           <th>Registered</th>
@@ -657,15 +778,20 @@ export function renderTotalUsers(users, container) {
             <td>${user.name || '--'}</td>
             <td>${user.email || '--'}</td>
             <td>${user.username || '--'}</td>
+            <td>${user.department_name || '--'}</td>
+            <td>${user.designation_title || '--'}</td>
+            <td>${user.phone || '--'}</td>
+            <td>${user.address ? (user.address.length > 30 ? user.address.substring(0, 30) + '...' : user.address) : '--'}</td>
             <td>${user.role || 'user'}</td>
             <td><span class="status-pill ${user.status || 'pending'}">${user.status || 'pending'}</span></td>
             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
             <td>
-              <button class="btn btn-ghost btn-sm" data-view-user="${user.id}">View</button>
+              <button class="btn btn-ghost btn-sm" data-edit-user="${user.id}">Edit</button>
               ${user.status === 'pending' ? `
                 <button class="btn btn-primary btn-sm" data-approve-user="${user.id}">Approve</button>
                 <button class="btn btn-outline btn-sm" data-reject-user="${user.id}">Reject</button>
               ` : ''}
+              <button class="btn btn-outline btn-sm text-red-600" data-delete-user="${user.id}">Delete</button>
             </td>
           </tr>
         `).join('')}
@@ -680,7 +806,7 @@ export function renderTotalUsers(users, container) {
       try {
         await updateUserStatus(userId, 'approved');
         showToast('User approved successfully', 'success');
-        loadAndRenderTotalUsers(container);
+        await refreshTotalUsersPage(container);
       } catch (error) {
         showToast(error.message || 'Failed to approve user', 'error');
       }
@@ -694,7 +820,7 @@ export function renderTotalUsers(users, container) {
         try {
           await updateUserStatus(userId, 'rejected');
           showToast('User rejected', 'success');
-          loadAndRenderTotalUsers(container);
+          await refreshTotalUsersPage(container);
         } catch (error) {
           showToast(error.message || 'Failed to reject user', 'error');
         }
@@ -706,11 +832,368 @@ export function renderTotalUsers(users, container) {
 // Load and render active users
 export async function loadAndRenderActiveUsers(container) {
   await refreshActiveUsersPage(container);
+  wireUserActions(container, 'active');
 }
 
 // Load and render total users
 export async function loadAndRenderTotalUsers(container) {
   await refreshTotalUsersPage(container);
+  wireUserActions(container, 'total');
+}
+
+// Wire up edit/delete buttons and modals
+async function wireUserActions(container, pageType) {
+  // Wire edit buttons
+  container.querySelectorAll('[data-edit-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId = btn.dataset.editUser;
+      await openEditUserModal(userId, container);
+    });
+  });
+
+  // Wire delete buttons
+  container.querySelectorAll('[data-delete-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId = btn.dataset.deleteUser;
+      if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        try {
+          await deleteUser(userId);
+          showToast('User deleted successfully', 'success');
+          
+          // Refresh appropriate page
+          if (pageType === 'active') {
+            await refreshActiveUsersPage(container);
+            wireUserActions(container, 'active');
+          } else if (pageType === 'total') {
+            await refreshTotalUsersPage(container);
+            wireUserActions(container, 'total');
+          }
+        } catch (error) {
+          showToast(error.message || 'Failed to delete user', 'error');
+        }
+      }
+    });
+  });
+}
+
+// Open edit user modal
+async function openEditUserModal(userId, container) {
+  try {
+    const user = await loadUserById(userId);
+    const [departments, designations] = await Promise.all([
+      loadDepartments(),
+      loadDesignations(user.department_id || null)
+    ]);
+
+    const modal = container.querySelector('#modal-edit-user');
+    const form = container.querySelector('#form-edit-user');
+    
+    if (!modal || !form) return;
+
+    // Populate form fields
+    form.querySelector('#edit-user-id').value = user.id;
+    form.querySelector('#edit-user-name').value = user.name || '';
+    form.querySelector('#edit-user-email').value = user.email || '';
+    form.querySelector('#edit-user-username').value = user.username || '';
+    form.querySelector('#edit-user-mobile').value = user.phone || '';
+    form.querySelector('#edit-user-address').value = user.address || '';
+    form.querySelector('#edit-user-status').value = user.status || 'pending';
+    form.querySelector('#edit-user-role').value = user.role || 'user';
+
+    // Populate department dropdown
+    const deptSelect = form.querySelector('#edit-user-department');
+    deptSelect.innerHTML = '<option value="">Select department</option>' +
+      departments.map(d => `<option value="${d.id}" ${d.id === user.department_id ? 'selected' : ''}>${d.name}</option>`).join('');
+
+    // Populate designation dropdown
+    const desgSelect = form.querySelector('#edit-user-designation');
+    desgSelect.innerHTML = '<option value="">Select designation</option>' +
+      designations.map(d => `<option value="${d.id}" ${d.id === user.designation_id ? 'selected' : ''}>${d.title}</option>`).join('');
+
+    // Update designations when department changes
+    deptSelect.addEventListener('change', async (e) => {
+      const deptId = e.target.value;
+      if (!deptId) {
+        desgSelect.innerHTML = '<option value="">Select department first</option>';
+        desgSelect.disabled = true;
+        return;
+      }
+
+      const deptDesignations = await loadDesignations(deptId);
+      desgSelect.innerHTML = '<option value="">Select designation</option>' +
+        deptDesignations.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+      desgSelect.disabled = false;
+    });
+
+    // Wire form submission
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      
+      const userData = {
+        name: formData.get('name')?.trim(),
+        email: formData.get('email')?.trim(),
+        username: formData.get('username')?.trim(),
+        department_id: formData.get('department_id'),
+        designation_id: formData.get('designation_id'),
+        mobile: formData.get('mobile')?.trim(),
+        address: formData.get('address')?.trim(),
+        status: formData.get('status'),
+        role: formData.get('role')
+      };
+
+      try {
+        await updateUser(userId, userData);
+        showToast('User updated successfully', 'success');
+        modal.classList.add('hidden');
+        
+        // Refresh appropriate page
+        const route = window.location.hash.replace("#", "").trim();
+        if (route === 'admin/active-users') {
+          await refreshActiveUsersPage(container);
+          wireUserActions(container, 'active');
+        } else if (route === 'admin/pending-users') {
+          await refreshPendingUsersPage(container);
+          wireUserActions(container, 'pending');
+        } else if (route === 'admin/total-users') {
+          await refreshTotalUsersPage(container);
+          wireUserActions(container, 'total');
+        }
+      } catch (error) {
+        showToast(error.message || 'Failed to update user', 'error');
+      }
+    };
+
+    modal.classList.remove('hidden');
+  } catch (error) {
+    console.error('[Admin] Error opening edit user modal:', error);
+    showToast('Failed to load user details', 'error');
+  }
+}
+
+// Hydrate active users page
+export async function hydrateActiveUsersPage(container) {
+  await refreshActiveUsersPage(container);
+  wireUserActions(container, 'active');
+  
+  // Load departments and designations for filters
+  const [departments] = await Promise.all([loadDepartments()]);
+  
+  const deptFilter = container.querySelector('#active-users-filter-dept');
+  const desgFilter = container.querySelector('#active-users-filter-desg');
+  const searchInput = container.querySelector('#active-users-search');
+  const refreshBtn = container.querySelector('[data-action="refresh-active-users"]');
+
+  if (deptFilter) {
+    deptFilter.innerHTML = '<option value="">All Departments</option>' +
+      departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    
+    deptFilter.addEventListener('change', async () => {
+      const deptId = deptFilter.value;
+      if (deptId) {
+        const designations = await loadDesignations(deptId);
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>' +
+            designations.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+        }
+      } else {
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>';
+        }
+      }
+      await refreshActiveUsersPage(container);
+      wireUserActions(container, 'active');
+    });
+  }
+
+  if (desgFilter) {
+    desgFilter.addEventListener('change', async () => {
+      await refreshActiveUsersPage(container);
+      wireUserActions(container, 'active');
+    });
+  }
+
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        await refreshActiveUsersPage(container);
+        wireUserActions(container, 'active');
+      }, 300);
+    });
+  }
+
+  refreshBtn?.addEventListener('click', async () => {
+    await refreshActiveUsersPage(container);
+    wireUserActions(container, 'active');
+  });
+}
+
+// Refresh pending users page
+export async function refreshPendingUsersPage(container) {
+  if (!container) container = document.getElementById('app-view');
+  if (!container) return;
+
+  try {
+    // Get filters
+    const deptFilter = container.querySelector('#pending-users-filter-dept')?.value || '';
+    const desgFilter = container.querySelector('#pending-users-filter-desg')?.value || '';
+    const searchTerm = container.querySelector('#pending-users-search')?.value?.toLowerCase() || '';
+    
+    let users = await loadPendingUsers();
+    
+    // Apply department filter
+    if (deptFilter) {
+      users = users.filter(u => u.department_id === deptFilter);
+    }
+    
+    // Apply designation filter
+    if (desgFilter) {
+      users = users.filter(u => u.designation_id === desgFilter);
+    }
+    
+    // Apply search filter
+    if (searchTerm) {
+      users = users.filter(u => 
+        (u.name || '').toLowerCase().includes(searchTerm) ||
+        (u.email || '').toLowerCase().includes(searchTerm) ||
+        (u.username || '').toLowerCase().includes(searchTerm) ||
+        (u.phone || '').toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    renderPendingUsers(users, container);
+  } catch (error) {
+    console.error('[Admin] Error refreshing pending users page:', error);
+    showToast('Failed to refresh pending users', 'error');
+  }
+}
+
+// Hydrate pending users page
+export async function hydratePendingUsersPage(container) {
+  await refreshPendingUsersPage(container);
+  wireUserActions(container, 'pending');
+  
+  // Load departments and designations for filters
+  const [departments] = await Promise.all([loadDepartments()]);
+  
+  const deptFilter = container.querySelector('#pending-users-filter-dept');
+  const desgFilter = container.querySelector('#pending-users-filter-desg');
+  const searchInput = container.querySelector('#pending-users-search');
+  const refreshBtn = container.querySelector('[data-action="refresh-pending-users"]');
+
+  if (deptFilter) {
+    deptFilter.innerHTML = '<option value="">All Departments</option>' +
+      departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    
+    deptFilter.addEventListener('change', async () => {
+      const deptId = deptFilter.value;
+      if (deptId) {
+        const designations = await loadDesignations(deptId);
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>' +
+            designations.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+        }
+      } else {
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>';
+        }
+      }
+      await refreshPendingUsersPage(container);
+      wireUserActions(container, 'pending');
+    });
+  }
+
+  if (desgFilter) {
+    desgFilter.addEventListener('change', async () => {
+      await refreshPendingUsersPage(container);
+      wireUserActions(container, 'pending');
+    });
+  }
+
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        await refreshPendingUsersPage(container);
+        wireUserActions(container, 'pending');
+      }, 300);
+    });
+  }
+
+  refreshBtn?.addEventListener('click', async () => {
+    await refreshPendingUsersPage(container);
+    wireUserActions(container, 'pending');
+  });
+}
+
+// Hydrate total users page
+export async function hydrateTotalUsersPage(container) {
+  await refreshTotalUsersPage(container);
+  wireUserActions(container, 'total');
+  
+  // Load departments and designations for filters
+  const [departments] = await Promise.all([loadDepartments()]);
+  
+  const statusFilter = container.querySelector('#total-users-filter-status');
+  const deptFilter = container.querySelector('#total-users-filter-dept');
+  const desgFilter = container.querySelector('#total-users-filter-desg');
+  const searchInput = container.querySelector('#total-users-search');
+  const refreshBtn = container.querySelector('[data-action="refresh-total-users"]');
+
+  if (deptFilter) {
+    deptFilter.innerHTML = '<option value="">All Departments</option>' +
+      departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    
+    deptFilter.addEventListener('change', async () => {
+      const deptId = deptFilter.value;
+      if (deptId) {
+        const designations = await loadDesignations(deptId);
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>' +
+            designations.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+        }
+      } else {
+        if (desgFilter) {
+          desgFilter.innerHTML = '<option value="">All Designations</option>';
+        }
+      }
+      await refreshTotalUsersPage(container);
+      wireUserActions(container, 'total');
+    });
+  }
+
+  if (desgFilter) {
+    desgFilter.addEventListener('change', async () => {
+      await refreshTotalUsersPage(container);
+      wireUserActions(container, 'total');
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', async () => {
+      await refreshTotalUsersPage(container);
+      wireUserActions(container, 'total');
+    });
+  }
+
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        await refreshTotalUsersPage(container);
+        wireUserActions(container, 'total');
+      }, 300);
+    });
+  }
+
+  refreshBtn?.addEventListener('click', async () => {
+    await refreshTotalUsersPage(container);
+    wireUserActions(container, 'total');
+  });
 }
 
 // Hydrate departments page

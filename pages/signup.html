@@ -20,6 +20,44 @@
       </div>
 
       <div>
+        <label for="signup-department" class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+        <select 
+          id="signup-department" 
+          name="department_id" 
+          required
+          class="input w-full"
+        >
+          <option value="">Select department</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="signup-designation" class="block text-sm font-medium text-slate-700 mb-1">Designation</label>
+        <select 
+          id="signup-designation" 
+          name="designation_id" 
+          required
+          class="input w-full"
+          disabled
+        >
+          <option value="">Select department first</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="signup-mobile" class="block text-sm font-medium text-slate-700 mb-1">Mobile</label>
+        <input 
+          type="tel" 
+          id="signup-mobile" 
+          name="mobile" 
+          required
+          class="input w-full" 
+          placeholder="Enter your mobile number"
+          autocomplete="tel"
+        />
+      </div>
+
+      <div>
         <label for="signup-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
         <input 
           type="email" 
@@ -30,6 +68,19 @@
           placeholder="Enter your email"
           autocomplete="email"
         />
+      </div>
+
+      <div>
+        <label for="signup-address" class="block text-sm font-medium text-slate-700 mb-1">Address</label>
+        <textarea 
+          id="signup-address" 
+          name="address" 
+          required
+          class="input w-full" 
+          rows="3"
+          placeholder="Enter your address"
+          autocomplete="street-address"
+        ></textarea>
       </div>
 
       <div>

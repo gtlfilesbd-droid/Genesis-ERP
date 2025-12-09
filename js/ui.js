@@ -2319,36 +2319,26 @@ export function hydratePage(container) {
   }
 
   if (route === 'admin/active-users') {
-    import('./admin.js').then(({ loadAndRenderActiveUsers }) => {
-      loadAndRenderActiveUsers(container);
-      container.querySelector('[data-action="refresh-active-users"]')?.addEventListener('click', () => {
-        loadAndRenderActiveUsers(container);
-      });
+    import('./admin.js').then(({ hydrateActiveUsersPage }) => {
+      hydrateActiveUsersPage(container);
     });
+    hydrateModals(container);
     return;
   }
 
   if (route === 'admin/pending-users') {
-    import('./admin.js').then(({ loadPendingUsers, renderPendingUsers }) => {
-      loadPendingUsers().then(users => {
-        renderPendingUsers(users, container);
-      });
-      container.querySelector('[data-action="refresh-pending-users"]')?.addEventListener('click', () => {
-        loadPendingUsers().then(users => {
-          renderPendingUsers(users, container);
-        });
-      });
+    import('./admin.js').then(({ hydratePendingUsersPage }) => {
+      hydratePendingUsersPage(container);
     });
+    hydrateModals(container);
     return;
   }
 
   if (route === 'admin/total-users') {
-    import('./admin.js').then(({ loadAndRenderTotalUsers }) => {
-      loadAndRenderTotalUsers(container);
-      container.querySelector('[data-action="refresh-total-users"]')?.addEventListener('click', () => {
-        loadAndRenderTotalUsers(container);
-      });
+    import('./admin.js').then(({ hydrateTotalUsersPage }) => {
+      hydrateTotalUsersPage(container);
     });
+    hydrateModals(container);
     return;
   }
 

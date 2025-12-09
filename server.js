@@ -189,6 +189,14 @@ async function initDatabase() {
         db.run('ALTER TABLE users ADD COLUMN country TEXT');
         console.log('[Server] Added country column to users table');
       }
+      if (!columns.includes('department_id')) {
+        db.run('ALTER TABLE users ADD COLUMN department_id TEXT');
+        console.log('[Server] Added department_id column to users table');
+      }
+      if (!columns.includes('designation_id')) {
+        db.run('ALTER TABLE users ADD COLUMN designation_id TEXT');
+        console.log('[Server] Added designation_id column to users table');
+      }
     } catch (error) {
       console.warn('[Server] Migration check failed (table may already have columns):', error.message);
     }
@@ -313,10 +321,10 @@ initDatabase().then(() => {
   // Signup endpoint
   app.post('/api/auth/signup', async (req, res) => {
     try {
-      const { name, email, username, password } = req.body;
+      const { name, email, username, password, department_id, designation_id, mobile, address } = req.body;
 
       // Validation
-      if (!name || !email || !username || !password) {
+      if (!name || !email || !username || !password || !department_id || !designation_id || !mobile || !address) {
         return res.status(400).json({ error: 'All fields are required' });
       }
 
@@ -324,15 +332,40 @@ initDatabase().then(() => {
         return res.status(400).json({ error: 'Password must be at least 6 characters' });
       }
 
-      // Check if email or username already exists
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+
+      // Check if email already exists
       const existingEmail = executeQuery('SELECT * FROM users WHERE email = ?', [email]);
       if (existingEmail) {
         return res.status(400).json({ error: 'Email already registered' });
       }
 
+      // Check if mobile/phone already exists
+      const existingMobile = executeQuery('SELECT * FROM users WHERE phone = ?', [mobile]);
+      if (existingMobile) {
+        return res.status(400).json({ error: 'Mobile number already registered' });
+      }
+
+      // Check if username already exists
       const existingUsername = executeQuery('SELECT * FROM users WHERE username = ?', [username]);
       if (existingUsername) {
         return res.status(400).json({ error: 'Username already taken' });
+      }
+
+      // Validate department exists
+      const department = executeQuery('SELECT * FROM departments WHERE id = ?', [department_id]);
+      if (!department) {
+        return res.status(400).json({ error: 'Invalid department selected' });
+      }
+
+      // Validate designation exists and belongs to department
+      const designation = executeQuery('SELECT * FROM designations WHERE id = ? AND department_id = ?', [designation_id, department_id]);
+      if (!designation) {
+        return res.status(400).json({ error: 'Invalid designation selected for this department' });
       }
 
       // Hash password
@@ -341,8 +374,8 @@ initDatabase().then(() => {
       const createdAt = new Date().toISOString();
 
       // Insert user with pending status
-      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-      stmt.run([id, name, email, username, hashedPassword, 'user', 'pending', createdAt, createdAt]);
+      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status, department_id, designation_id, phone, address, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      stmt.run([id, name, email, username, hashedPassword, 'user', 'pending', department_id, designation_id, mobile, address, createdAt, createdAt]);
       stmt.free();
       saveDatabase();
 
@@ -441,18 +474,223 @@ initDatabase().then(() => {
   // Get pending users
   app.get('/api/admin/pending-users', authenticateToken, requireRole('admin'), (req, res) => {
     try {
-      const results = executeQueryAll('SELECT id, name, email, username, role, status, createdAt FROM users WHERE status = ? ORDER BY createdAt DESC', ['pending']);
+      const results = executeQueryAll(`SELECT u.id, u.name, u.email, u.username, u.role, u.status, u.phone, u.address, 
+                                              u.department_id, u.designation_id, u.createdAt,
+                                              d.name as department_name, des.title as designation_title
+                                       FROM users u
+                                       LEFT JOIN departments d ON u.department_id = d.id
+                                       LEFT JOIN designations des ON u.designation_id = des.id
+                                       WHERE u.status = ? 
+                                       ORDER BY u.createdAt DESC`, ['pending']);
       res.json(results || []);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  // Get all users
+  // Get all users with optional filters
   app.get('/api/admin/users', authenticateToken, requireRole('admin'), (req, res) => {
     try {
-      const results = executeQueryAll('SELECT id, name, email, username, role, status, createdAt, updatedAt FROM users ORDER BY createdAt DESC');
+      const { department_id, designation_id, status } = req.query;
+      let sql = `SELECT u.id, u.name, u.email, u.username, u.role, u.status, u.phone, u.address, 
+                        u.department_id, u.designation_id, u.createdAt, u.updatedAt,
+                        d.name as department_name, des.title as designation_title
+                 FROM users u
+                 LEFT JOIN departments d ON u.department_id = d.id
+                 LEFT JOIN designations des ON u.designation_id = des.id`;
+      let params = [];
+      let conditions = [];
+
+      if (department_id) {
+        conditions.push('u.department_id = ?');
+        params.push(department_id);
+      }
+      if (designation_id) {
+        conditions.push('u.designation_id = ?');
+        params.push(designation_id);
+      }
+      if (status) {
+        conditions.push('u.status = ?');
+        params.push(status);
+      }
+
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      sql += ' ORDER BY u.createdAt DESC';
+      const results = executeQueryAll(sql, params);
       res.json(results || []);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get single user by ID
+  app.get('/api/admin/users/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = executeQuery(`SELECT u.*, d.name as department_name, des.title as designation_title
+                                  FROM users u
+                                  LEFT JOIN departments d ON u.department_id = d.id
+                                  LEFT JOIN designations des ON u.designation_id = des.id
+                                  WHERE u.id = ?`, [id]);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Remove password from response
+      delete user.password;
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update user
+  app.put('/api/admin/users/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, email, username, department_id, designation_id, mobile, address, status, role } = req.body;
+
+      // Check if user exists
+      const existingUser = executeQuery('SELECT * FROM users WHERE id = ?', [id]);
+      if (!existingUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Validate email uniqueness (if changed)
+      if (email && email !== existingUser.email) {
+        const emailExists = executeQuery('SELECT * FROM users WHERE email = ? AND id != ?', [email, id]);
+        if (emailExists) {
+          return res.status(400).json({ error: 'Email already registered' });
+        }
+      }
+
+      // Validate mobile uniqueness (if changed)
+      if (mobile && mobile !== existingUser.phone) {
+        const mobileExists = executeQuery('SELECT * FROM users WHERE phone = ? AND id != ?', [mobile, id]);
+        if (mobileExists) {
+          return res.status(400).json({ error: 'Mobile number already registered' });
+        }
+      }
+
+      // Validate username uniqueness (if changed)
+      if (username && username !== existingUser.username) {
+        const usernameExists = executeQuery('SELECT * FROM users WHERE username = ? AND id != ?', [username, id]);
+        if (usernameExists) {
+          return res.status(400).json({ error: 'Username already taken' });
+        }
+      }
+
+      // Validate department if provided
+      if (department_id) {
+        const department = executeQuery('SELECT * FROM departments WHERE id = ?', [department_id]);
+        if (!department) {
+          return res.status(400).json({ error: 'Invalid department' });
+        }
+      }
+
+      // Validate designation if provided
+      if (designation_id) {
+        const designation = executeQuery('SELECT * FROM designations WHERE id = ?', [designation_id]);
+        if (!designation) {
+          return res.status(400).json({ error: 'Invalid designation' });
+        }
+        // If department_id is also provided, validate designation belongs to department
+        if (department_id && designation.department_id !== department_id) {
+          return res.status(400).json({ error: 'Designation does not belong to selected department' });
+        }
+      }
+
+      // Build update query
+      const updatedAt = new Date().toISOString();
+      const updates = [];
+      const values = [];
+
+      if (name !== undefined) {
+        updates.push('name = ?');
+        values.push(name);
+      }
+      if (email !== undefined) {
+        updates.push('email = ?');
+        values.push(email);
+      }
+      if (username !== undefined) {
+        updates.push('username = ?');
+        values.push(username);
+      }
+      if (department_id !== undefined) {
+        updates.push('department_id = ?');
+        values.push(department_id);
+      }
+      if (designation_id !== undefined) {
+        updates.push('designation_id = ?');
+        values.push(designation_id);
+      }
+      if (mobile !== undefined) {
+        updates.push('phone = ?');
+        values.push(mobile);
+      }
+      if (address !== undefined) {
+        updates.push('address = ?');
+        values.push(address);
+      }
+      if (status !== undefined) {
+        updates.push('status = ?');
+        values.push(status);
+      }
+      if (role !== undefined) {
+        updates.push('role = ?');
+        values.push(role);
+      }
+
+      updates.push('updatedAt = ?');
+      values.push(updatedAt);
+      values.push(id);
+
+      const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+      const stmt = db.prepare(sql);
+      stmt.run(values);
+      stmt.free();
+      saveDatabase();
+
+      // Get updated user
+      const updatedUser = executeQuery(`SELECT u.*, d.name as department_name, des.title as designation_title
+                                         FROM users u
+                                         LEFT JOIN departments d ON u.department_id = d.id
+                                         LEFT JOIN designations des ON u.designation_id = des.id
+                                         WHERE u.id = ?`, [id]);
+      delete updatedUser.password;
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete user
+  app.delete('/api/admin/users/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = executeQuery('SELECT * FROM users WHERE id = ?', [id]);
+      if (!existing) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Prevent deleting admin users
+      if (existing.role === 'admin') {
+        return res.status(400).json({ error: 'Cannot delete admin users' });
+      }
+
+      const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+      stmt.run([id]);
+      stmt.free();
+      saveDatabase();
+
+      res.json({ success: true, id });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -480,6 +718,35 @@ initDatabase().then(() => {
       }
 
       res.json({ success: true, user: updatedUser });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Public endpoints for signup form
+  app.get('/api/departments', (req, res) => {
+    try {
+      const results = executeQueryAll('SELECT * FROM departments ORDER BY name');
+      res.json(results || []);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/designations', (req, res) => {
+    try {
+      const departmentId = req.query.department_id;
+      let sql = 'SELECT d.*, dept.name as department_name FROM designations d LEFT JOIN departments dept ON d.department_id = dept.id';
+      let params = [];
+      
+      if (departmentId) {
+        sql += ' WHERE d.department_id = ?';
+        params.push(departmentId);
+      }
+      
+      sql += ' ORDER BY dept.name, d.title';
+      const results = executeQueryAll(sql, params);
+      res.json(results || []);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
