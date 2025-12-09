@@ -1540,18 +1540,28 @@ export async function hydrateUserRolesPage(container) {
         roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
     }
     
-    // Wire up add role button
+    // Inline form references
     const addRoleBtn = container.querySelector('[data-action="add-user-role"]');
-    const addRoleModal = container.querySelector('#modal-add-user-role');
     const addRoleForm = container.querySelector('#form-add-user-role');
-    
-    addRoleBtn?.addEventListener('click', () => {
-      addRoleModal?.classList.remove('hidden');
-    });
-    
-    // Render permission checkboxes for add form (initial)
     const addPermsContainer = container.querySelector('#permissions-add-list');
+    const addRoleResetBtn = container.querySelector('[data-action="reset-add-role"]');
+    const addRolePanel = container.querySelector('#add-role-panel');
+    const editRoleForm = container.querySelector('#form-edit-user-role');
+    const editRolePanel = container.querySelector('#edit-role-panel');
+    const editRoleCancelBtn = container.querySelector('[data-action="cancel-edit-role"]');
+    const editPermsContainer = container.querySelector('#permissions-edit-list');
+
+    // Render permission checkboxes for add form (initial)
     renderPermissionOptions(addPermsContainer, []);
+    addRoleResetBtn?.addEventListener('click', () => {
+      renderPermissionOptions(addPermsContainer, []);
+    });
+
+    // Scroll to add form when clicking header button
+    addRoleBtn?.addEventListener('click', () => {
+      addRolePanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      renderPermissionOptions(addPermsContainer, []);
+    });
 
     // Wire up add role form
     addRoleForm?.addEventListener('submit', async (e) => {
@@ -1569,18 +1579,15 @@ export async function hydrateUserRolesPage(container) {
       try {
         await createUserRole({ name, description, permissions });
         showToast('Role created successfully', 'success');
-        addRoleModal?.classList.add('hidden');
         addRoleForm.reset();
-        renderPermissionOptions(container.querySelector('#permissions-add-list'), []); // reset checkboxes
+        renderPermissionOptions(addPermsContainer, []); // reset checkboxes
         await hydrateUserRolesPage(container);
       } catch (error) {
         showToast(error.message || 'Failed to create role', 'error');
       }
     });
     
-    // Wire up edit role form submission
-    const editRoleForm = container.querySelector('#form-edit-user-role');
-    const editRoleModal = container.querySelector('#modal-edit-user-role');
+    // Wire up edit role form submission (inline)
     if (editRoleForm) {
       editRoleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1598,13 +1605,23 @@ export async function hydrateUserRolesPage(container) {
         try {
           await updateUserRole(id, { name, description, permissions });
           showToast('Role updated', 'success');
-          editRoleModal?.classList.add('hidden');
+          editRoleForm.reset();
+          renderPermissionOptions(editPermsContainer, []);
+          editRolePanel?.classList.add('hidden');
           await hydrateUserRolesPage(container);
         } catch (error) {
           showToast(error.message || 'Failed to update role', 'error');
         }
       });
     }
+
+    // Cancel edit
+    editRoleCancelBtn?.addEventListener('click', () => {
+      editRoleForm?.reset();
+      renderPermissionOptions(editPermsContainer, []);
+      editRolePanel?.classList.add('hidden');
+      addRolePanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     // Wire up assign role button
     const assignBtn = container.querySelector('[data-action="assign-role-to-user"]');
@@ -1635,20 +1652,18 @@ export async function hydrateUserRolesPage(container) {
           const roleId = btn.dataset.editRole;
           const roleName = btn.dataset.roleName;
           const roleDesc = btn.dataset.roleDesc;
-        const rolePerms = JSON.parse(decodeURIComponent(btn.dataset.rolePerms || '%5B%5D'));
-        const editModal = container.querySelector('#modal-edit-user-role');
-        const editForm = container.querySelector('#form-edit-user-role');
-        const editPermsContainer = container.querySelector('#permissions-edit-list');
+          const rolePerms = JSON.parse(decodeURIComponent(btn.dataset.rolePerms || '%5B%5D'));
+          
+          if (!editRoleForm || !editPermsContainer || !editRolePanel) return;
 
-        if (!editModal || !editForm || !editPermsContainer) return;
+          // Populate form
+          editRoleForm.querySelector('input[name="id"]').value = roleId;
+          editRoleForm.querySelector('input[name="name"]').value = roleName || '';
+          editRoleForm.querySelector('textarea[name="description"]').value = roleDesc || '';
+          renderPermissionOptions(editPermsContainer, rolePerms);
 
-        // Populate form
-        editForm.querySelector('input[name="id"]').value = roleId;
-        editForm.querySelector('input[name="name"]').value = roleName || '';
-        editForm.querySelector('textarea[name="description"]').value = roleDesc || '';
-        renderPermissionOptions(editPermsContainer, rolePerms);
-
-        editModal.classList.remove('hidden');
+          editRolePanel.classList.remove('hidden');
+          editRolePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       });
       
