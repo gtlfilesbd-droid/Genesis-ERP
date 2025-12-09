@@ -8,6 +8,13 @@ const routes = {
   "user/profile": "user/profile.html",
   "user/settings": "user/settings.html",
   "admin/dashboard": "admin/dashboard.html",
+  "admin/active-users": "admin/active-users.html",
+  "admin/pending-users": "admin/pending-users.html",
+  "admin/total-users": "admin/total-users.html",
+  "admin/departments": "admin/departments.html",
+  "admin/designations": "admin/designations.html",
+  "admin/user-roles": "admin/user-roles.html",
+  "admin/reporting": "admin/reporting.html",
   dashboard: "dashboard.html", // Legacy, redirects based on role
   "offers-list": "offers-list.html",
   "offer-create": "offer-create.html",
@@ -29,7 +36,16 @@ const routes = {
 const publicRoutes = ['login', 'signup'];
 
 // Routes that require admin role
-const adminOnlyRoutes = ['admin/dashboard'];
+const adminOnlyRoutes = [
+  'admin/dashboard',
+  'admin/active-users',
+  'admin/pending-users',
+  'admin/total-users',
+  'admin/departments',
+  'admin/designations',
+  'admin/user-roles',
+  'admin/reporting'
+];
 
 let outlet;
 
@@ -90,6 +106,7 @@ async function handleRoute() {
   
   // Import auth functions dynamically to avoid circular dependencies
   const { isAuthenticated, isAdmin, verifyToken, getCurrentRole } = await import('./auth.js');
+  const { mountFrame, unmountFrame } = await import('./ui.js');
   
   // If no route specified, redirect based on authentication
   if (!pageKey) {
@@ -106,11 +123,13 @@ async function handleRoute() {
         }
       } else {
         window.location.hash = '#login';
+        await unmountFrame();
         return;
       }
     } catch (error) {
       console.error('[Router] Error checking authentication:', error);
       window.location.hash = '#login';
+      await unmountFrame();
       return;
     }
   }
@@ -121,7 +140,15 @@ async function handleRoute() {
     if (!authenticated) {
       console.log('[Router] Authentication required, redirecting to login');
       window.location.hash = '#login';
+      await unmountFrame();
       return;
+    }
+    
+    // Mount frame if authenticated and not on public route
+    const sidebar = document.getElementById("sidebar");
+    const navbar = document.getElementById("navbar");
+    if (sidebar && (sidebar.innerHTML.trim() === "" || sidebar.classList.contains("hidden"))) {
+      await mountFrame();
     }
     
     // Check if route requires admin role
@@ -132,6 +159,9 @@ async function handleRoute() {
         return;
       }
     }
+  } else {
+    // Public route - unmount frame
+    await unmountFrame();
   }
   
   // Handle legacy dashboard route

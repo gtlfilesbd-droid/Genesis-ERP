@@ -14,40 +14,48 @@
   <nav class="nav-section" data-role="admin">
     <div class="nav-label">Administration</div>
     <a href="#admin/dashboard" data-route="admin/dashboard">Admin Dashboard</a>
+    <a href="#admin/active-users" data-route="admin/active-users">Active Users</a>
+    <a href="#admin/pending-users" data-route="admin/pending-users">Pending Users</a>
+    <a href="#admin/total-users" data-route="admin/total-users">Total Users</a>
+    <a href="#admin/departments" data-route="admin/departments">Departments</a>
+    <a href="#admin/designations" data-route="admin/designations">Designations</a>
+    <a href="#admin/user-roles" data-route="admin/user-roles">User Roles</a>
+    <a href="#admin/reporting" data-route="admin/reporting">Reporting</a>
   </nav>
 
   <!-- User Navigation -->
-  <nav class="nav-section">
+  <nav class="nav-section" data-role="user">
     <div class="nav-label">Workspace</div>
     <a
       href="#user/dashboard"
       data-route="user/dashboard"
       id="nav-user-dashboard"
+      data-permission="dashboard"
       >Dashboard</a
     >
-    <a href="#offers-list" data-route="offers-list">Offer List</a>
-    <a href="#offer-create" data-route="offer-create">Create Offer</a>
-    <a href="#offer-preview" data-route="offer-preview">Offer Preview</a>
+    <a href="#offers-list" data-route="offers-list" data-permission="view_offers">Offer List</a>
+    <a href="#offer-create" data-route="offer-create" data-permission="create_offer">Create Offer</a>
+    <a href="#offer-preview" data-route="offer-preview" data-permission="view_offers">Offer Preview</a>
   </nav>
-  <nav class="nav-section">
+  <nav class="nav-section" data-role="user">
     <div class="nav-label">Operations</div>
-    <a href="#boq-list" data-route="boq-list">BOQs</a>
+    <a href="#boq-list" data-route="boq-list" data-permission="view_boq">BOQs</a>
     <a
       href="#boq-create"
       data-route="boq-create"
-      data-role="Department Head,Management,Admin"
+      data-permission="create_boq"
       >New BOQ</a
     >
-    <a href="#requests-list" data-route="requests-list">Requests</a>
-    <a href="#request-create" data-route="request-create">New Request</a>
-    <a href="#request-details" data-route="request-details">Request Details</a>
+    <a href="#requests-list" data-route="requests-list" data-permission="view_requests">Requests</a>
+    <a href="#request-create" data-route="request-create" data-permission="create_request">New Request</a>
+    <a href="#request-details" data-route="request-details" data-permission="view_requests">Request Details</a>
   </nav>
-  <nav class="nav-section">
+  <nav class="nav-section" data-role="user">
     <div class="nav-label">Data</div>
-    <a href="#add-product" data-route="add-product">Add Product</a>
-    <a href="#product-database" data-route="product-database"
+    <a href="#add-product" data-route="add-product" data-permission="add_product">Add Product</a>
+    <a href="#product-database" data-route="product-database" data-permission="view_product"
       >Product Database</a
     >
-    <a href="#reports" data-route="reports">Reporting</a>
+    <a href="#reports" data-route="reports" data-permission="view_reports">Reporting</a>
   </nav>
 </div>

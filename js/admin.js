@@ -397,7 +397,14 @@ export async function refreshAdminDashboard() {
       loadDesignations(),
     ]);
 
+    // Calculate active users (approved users)
+    const activeUsers = allUsers.filter(u => u.status === 'approved');
+
     // Update counts
+    const activeUsersCountEl = container.querySelector('#active-users-count');
+    if (activeUsersCountEl) {
+      activeUsersCountEl.textContent = activeUsers.length;
+    }
     container.querySelector('#pending-users-count').textContent = pendingUsers.length;
     container.querySelector('#total-users-count').textContent = allUsers.length;
     container.querySelector('#departments-count').textContent = departments.length;
@@ -500,5 +507,181 @@ export function hydrateAdminDashboard(container) {
   refreshBtn?.addEventListener('click', () => {
     refreshAdminDashboard();
   });
+}
+
+// Render active users table
+export function renderActiveUsers(users, container) {
+  const tableContainer = container.querySelector('#active-users-table');
+  if (!tableContainer) return;
+
+  if (!users || users.length === 0) {
+    tableContainer.innerHTML = '<div class="text-center text-slate-500 p-4">No active users</div>';
+    return;
+  }
+
+  tableContainer.innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Registered</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users.map(user => `
+          <tr>
+            <td>${user.name || '--'}</td>
+            <td>${user.email || '--'}</td>
+            <td>${user.username || '--'}</td>
+            <td>${user.role || 'user'}</td>
+            <td><span class="status-pill ${user.status || 'approved'}">${user.status || 'approved'}</span></td>
+            <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" data-view-user="${user.id}">View</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Render total users table
+export function renderTotalUsers(users, container) {
+  const tableContainer = container.querySelector('#total-users-table');
+  if (!tableContainer) return;
+
+  if (!users || users.length === 0) {
+    tableContainer.innerHTML = '<div class="text-center text-slate-500 p-4">No users found</div>';
+    return;
+  }
+
+  tableContainer.innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Registered</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users.map(user => `
+          <tr>
+            <td>${user.name || '--'}</td>
+            <td>${user.email || '--'}</td>
+            <td>${user.username || '--'}</td>
+            <td>${user.role || 'user'}</td>
+            <td><span class="status-pill ${user.status || 'pending'}">${user.status || 'pending'}</span></td>
+            <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" data-view-user="${user.id}">View</button>
+              ${user.status === 'pending' ? `
+                <button class="btn btn-primary btn-sm" data-approve-user="${user.id}">Approve</button>
+                <button class="btn btn-outline btn-sm" data-reject-user="${user.id}">Reject</button>
+              ` : ''}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // Wire up approve/reject buttons
+  tableContainer.querySelectorAll('[data-approve-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId = btn.dataset.approveUser;
+      try {
+        await updateUserStatus(userId, 'approved');
+        showToast('User approved successfully', 'success');
+        loadAndRenderTotalUsers(container);
+      } catch (error) {
+        showToast(error.message || 'Failed to approve user', 'error');
+      }
+    });
+  });
+
+  tableContainer.querySelectorAll('[data-reject-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId = btn.dataset.rejectUser;
+      if (confirm('Are you sure you want to reject this user?')) {
+        try {
+          await updateUserStatus(userId, 'rejected');
+          showToast('User rejected', 'success');
+          loadAndRenderTotalUsers(container);
+        } catch (error) {
+          showToast(error.message || 'Failed to reject user', 'error');
+        }
+      }
+    });
+  });
+}
+
+// Load and render active users
+export async function loadAndRenderActiveUsers(container) {
+  try {
+    const allUsers = await loadAllUsers();
+    const activeUsers = allUsers.filter(u => u.status === 'approved');
+    renderActiveUsers(activeUsers, container);
+  } catch (error) {
+    console.error('[Admin] Error loading active users:', error);
+    showToast('Failed to load active users', 'error');
+  }
+}
+
+// Load and render total users
+export async function loadAndRenderTotalUsers(container) {
+  try {
+    const allUsers = await loadAllUsers();
+    renderTotalUsers(allUsers, container);
+  } catch (error) {
+    console.error('[Admin] Error loading total users:', error);
+    showToast('Failed to load users', 'error');
+  }
+}
+
+// Export functions for reports
+export function exportToCSV(data, filename) {
+  if (!data || data.length === 0) {
+    showToast('No data to export', 'error');
+    return;
+  }
+
+  const headers = Object.keys(data[0]);
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => headers.map(header => {
+      const value = row[header] || '';
+      return `"${String(value).replace(/"/g, '""')}"`;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast('CSV exported successfully', 'success');
+}
+
+export function exportToPDF(data, title, filename) {
+  // Simple PDF export using window.print() for now
+  // In production, you might want to use a library like jsPDF
+  showToast('PDF export: Use browser print function (Ctrl+P)', 'info');
+  window.print();
 }
 

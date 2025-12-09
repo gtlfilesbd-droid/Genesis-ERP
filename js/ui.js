@@ -1104,7 +1104,55 @@ function updateRoleBadges(role) {
   });
 }
 
+// Apply permission-based visibility to sidebar items
+async function applyPermissionVisibility() {
+  const user = getCurrentUser();
+  if (!user) return;
+  
+  // Admin users see all items
+  if (user.role === 'admin') {
+    document.querySelectorAll("[data-permission]").forEach((el) => {
+      el.style.display = "";
+    });
+    return;
+  }
+  
+  // For regular users, check permissions
+  // For now, if user has permissions array, use it; otherwise show all user items
+  const permissions = user.permissions || [];
+  
+  // If no permissions defined, show all user items (backward compatibility)
+  if (!permissions || permissions.length === 0) {
+    document.querySelectorAll("[data-permission]").forEach((el) => {
+      el.style.display = "";
+    });
+    return;
+  }
+  
+  // Hide items that user doesn't have permission for
+  document.querySelectorAll("[data-permission]").forEach((el) => {
+    const requiredPermission = el.getAttribute("data-permission");
+    if (permissions.includes(requiredPermission)) {
+      el.style.display = "";
+    } else {
+      el.style.display = "none";
+    }
+  });
+}
+
 export async function mountFrame() {
+  const sidebar = document.getElementById("sidebar");
+  const navbar = document.getElementById("navbar");
+  
+  // Show sidebar and navbar
+  if (sidebar) {
+    sidebar.classList.remove("hidden");
+    sidebar.classList.add("lg:flex");
+  }
+  if (navbar) {
+    navbar.classList.remove("hidden");
+  }
+  
   await Promise.all([
     loadComponent("sidebar", "sidebar.html"),
     loadComponent("navbar", "navbar.html"),
@@ -1118,6 +1166,7 @@ export async function mountFrame() {
   hydrateUserDisplay();
   wireLogout();
   hydrateUserDropdown();
+  applyPermissionVisibility();
 
   document
     .querySelector("[data-toggle-sidebar]")
@@ -1126,6 +1175,16 @@ export async function mountFrame() {
   const role = getCurrentRole();
   applyRoleVisibility(role);
   updateRoleBadges(role);
+  
+  // Show/hide nav sections based on role
+  document.querySelectorAll('[data-role]').forEach((navSection) => {
+    const allowedRoles = navSection.getAttribute('data-role').split(',').map(r => r.trim());
+    if (allowedRoles.includes(role)) {
+      navSection.style.display = '';
+    } else {
+      navSection.style.display = 'none';
+    }
+  });
 
   document.addEventListener("role:change", (event) => {
     const nextRole = event.detail;
@@ -1143,9 +1202,28 @@ export async function mountFrame() {
   // Listen for user profile updates to refresh UI
   document.addEventListener("user:updated", (event) => {
     hydrateUserDisplay();
+    applyPermissionVisibility();
   });
   
   console.log("[UI] Frame mounted, navigation wired");
+}
+
+export async function unmountFrame() {
+  const sidebar = document.getElementById("sidebar");
+  const navbar = document.getElementById("navbar");
+  
+  // Hide sidebar and navbar
+  if (sidebar) {
+    sidebar.classList.add("hidden");
+    sidebar.classList.remove("lg:flex");
+    sidebar.innerHTML = "";
+  }
+  if (navbar) {
+    navbar.classList.add("hidden");
+    navbar.innerHTML = "";
+  }
+  
+  console.log("[UI] Frame unmounted");
 }
 
 function hydrateUserDropdown() {
@@ -1282,8 +1360,25 @@ async function hydrateUserDashboard(container) {
     const user = getCurrentUser();
     if (!user) return;
 
-    const offers = await getOffers();
-    const requests = await getRequests();
+    const permissions = user.permissions || [];
+    
+    // If user has no permissions defined, show all (backward compatibility)
+    const hasPermission = (perm) => {
+      if (!permissions || permissions.length === 0) return true;
+      return permissions.includes(perm);
+    };
+
+    // Only load data if user has permission
+    let offers = [];
+    let requests = [];
+    
+    if (hasPermission('view_offers') || hasPermission('dashboard')) {
+      offers = await getOffers();
+    }
+    
+    if (hasPermission('view_requests') || hasPermission('dashboard')) {
+      requests = await getRequests();
+    }
 
     // Filter user's own offers and requests
     const userOffers = offers.filter(o => o.owner === user.name || o.owner === user.username);
@@ -1295,42 +1390,108 @@ async function hydrateUserDashboard(container) {
     const approvedCount = userOffers.filter(o => o.status === 'Approved').length;
     const requestsCount = userRequests.length;
 
-    // Update KPI cards
-    container.querySelector('#user-offers-count').textContent = offersCount;
-    container.querySelector('#user-pending-count').textContent = pendingCount;
-    container.querySelector('#user-approved-count').textContent = approvedCount;
-    container.querySelector('#user-requests-count').textContent = requestsCount;
+    // Update KPI cards (hide if no permission)
+    const offersCard = container.querySelector('#user-offers-count');
+    if (offersCard) {
+      if (hasPermission('view_offers') || hasPermission('dashboard')) {
+        offersCard.textContent = offersCount;
+        offersCard.closest('.kpi-card')?.classList.remove('hidden');
+      } else {
+        offersCard.closest('.kpi-card')?.classList.add('hidden');
+      }
+    }
+    
+    const pendingCard = container.querySelector('#user-pending-count');
+    if (pendingCard) {
+      if (hasPermission('view_offers') || hasPermission('dashboard')) {
+        pendingCard.textContent = pendingCount;
+        pendingCard.closest('.kpi-card')?.classList.remove('hidden');
+      } else {
+        pendingCard.closest('.kpi-card')?.classList.add('hidden');
+      }
+    }
+    
+    const approvedCard = container.querySelector('#user-approved-count');
+    if (approvedCard) {
+      if (hasPermission('view_offers') || hasPermission('dashboard')) {
+        approvedCard.textContent = approvedCount;
+        approvedCard.closest('.kpi-card')?.classList.remove('hidden');
+      } else {
+        approvedCard.closest('.kpi-card')?.classList.add('hidden');
+      }
+    }
+    
+    const requestsCard = container.querySelector('#user-requests-count');
+    if (requestsCard) {
+      if (hasPermission('view_requests') || hasPermission('dashboard')) {
+        requestsCard.textContent = requestsCount;
+        requestsCard.closest('.kpi-card')?.classList.remove('hidden');
+      } else {
+        requestsCard.closest('.kpi-card')?.classList.add('hidden');
+      }
+    }
 
-    // Update tables with user's data
+    // Update tables with user's data (only if permission exists)
     const offersTbody = container.querySelector('[data-fill="offers"]');
-    if (offersTbody && userOffers.length > 0) {
-      offersTbody.innerHTML = userOffers.slice(0, 5).map(
-        (offer) => `
-          <tr>
-            <td><a href="#offer-preview" data-route="offer-preview" style="color:var(--brand-primary);text-decoration:underline;">${offer.id}</a></td>
-            <td>${offer.customer}</td>
-            <td>$${offer.value.toLocaleString()}</td>
-            <td><span class="status-pill ${offer.status.toLowerCase()}">${offer.status}</span></td>
-          </tr>`
-      ).join("");
-    } else if (offersTbody) {
-      offersTbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500">No offers yet</td></tr>';
+    if (offersTbody) {
+      if (hasPermission('view_offers') || hasPermission('dashboard')) {
+        if (userOffers.length > 0) {
+          offersTbody.innerHTML = userOffers.slice(0, 5).map(
+            (offer) => `
+              <tr>
+                <td><a href="#offer-preview" data-route="offer-preview" style="color:var(--brand-primary);text-decoration:underline;">${offer.id}</a></td>
+                <td>${offer.customer}</td>
+                <td>$${offer.value.toLocaleString()}</td>
+                <td><span class="status-pill ${offer.status.toLowerCase()}">${offer.status}</span></td>
+              </tr>`
+          ).join("");
+        } else {
+          offersTbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500">No offers yet</td></tr>';
+        }
+        offersTbody.closest('.card')?.classList.remove('hidden');
+      } else {
+        offersTbody.closest('.card')?.classList.add('hidden');
+      }
     }
 
     const requestsTbody = container.querySelector('[data-fill="requests"]');
-    if (requestsTbody && userRequests.length > 0) {
-      requestsTbody.innerHTML = userRequests.slice(0, 5).map(
-        (req) => `
-          <tr>
-            <td><a href="#request-details" data-route="request-details" style="color:var(--brand-primary);text-decoration:underline;">${req.id}</a></td>
-            <td>${req.type}</td>
-            <td>$${req.amount.toLocaleString()}</td>
-            <td><span class="status-pill ${req.status.toLowerCase()}">${req.status}</span></td>
-          </tr>`
-      ).join("");
-    } else if (requestsTbody) {
-      requestsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500">No requests yet</td></tr>';
+    if (requestsTbody) {
+      if (hasPermission('view_requests') || hasPermission('dashboard')) {
+        if (userRequests.length > 0) {
+          requestsTbody.innerHTML = userRequests.slice(0, 5).map(
+            (req) => `
+              <tr>
+                <td><a href="#request-details" data-route="request-details" style="color:var(--brand-primary);text-decoration:underline;">${req.id}</a></td>
+                <td>${req.type}</td>
+                <td>$${req.amount.toLocaleString()}</td>
+                <td><span class="status-pill ${req.status.toLowerCase()}">${req.status}</span></td>
+              </tr>`
+          ).join("");
+        } else {
+          requestsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500">No requests yet</td></tr>';
+        }
+        requestsTbody.closest('.card')?.classList.remove('hidden');
+      } else {
+        requestsTbody.closest('.card')?.classList.add('hidden');
+      }
     }
+    
+    // Hide quick actions based on permissions
+    const quickActions = container.querySelectorAll('.card a[data-route]');
+    quickActions.forEach(action => {
+      const route = action.getAttribute('data-route');
+      let shouldShow = false;
+      
+      if (route === 'offer-create' && hasPermission('create_offer')) shouldShow = true;
+      else if (route === 'request-create' && hasPermission('create_request')) shouldShow = true;
+      else if (route === 'products' && hasPermission('view_product')) shouldShow = true;
+      else if (route === 'boq-create' && hasPermission('create_boq')) shouldShow = true;
+      else shouldShow = true; // Default show for other actions
+      
+      if (!shouldShow) {
+        action.closest('.card')?.classList.add('hidden');
+      }
+    });
   } catch (error) {
     console.error('[UI] Error hydrating user dashboard:', error);
   }
@@ -2152,6 +2313,134 @@ export function hydratePage(container) {
     });
     // Still run modals hydration for admin dashboard
     hydrateModals(container);
+    return;
+  }
+
+  // Check if we're on admin active users page
+  const adminActiveUsers = container.querySelector('#active-users-table');
+  if (adminActiveUsers) {
+    import('./admin.js').then(({ loadAndRenderActiveUsers }) => {
+      loadAndRenderActiveUsers(container);
+      container.querySelector('[data-action="refresh-active-users"]')?.addEventListener('click', () => {
+        loadAndRenderActiveUsers(container);
+      });
+    });
+    return;
+  }
+
+  // Check if we're on admin pending users page
+  const adminPendingUsers = container.querySelector('#pending-users-table');
+  if (adminPendingUsers && !adminDashboard) {
+    import('./admin.js').then(({ loadPendingUsers, renderPendingUsers }) => {
+      loadPendingUsers().then(users => {
+        renderPendingUsers(users, container);
+      });
+      container.querySelector('[data-action="refresh-pending-users"]')?.addEventListener('click', () => {
+        loadPendingUsers().then(users => {
+          renderPendingUsers(users, container);
+        });
+      });
+    });
+    return;
+  }
+
+  // Check if we're on admin total users page
+  const adminTotalUsers = container.querySelector('#total-users-table');
+  if (adminTotalUsers) {
+    import('./admin.js').then(({ loadAndRenderTotalUsers }) => {
+      loadAndRenderTotalUsers(container);
+      container.querySelector('[data-action="refresh-total-users"]')?.addEventListener('click', () => {
+        loadAndRenderTotalUsers(container);
+      });
+    });
+    return;
+  }
+
+  // Check if we're on admin departments page
+  const adminDepartments = container.querySelector('#departments-table');
+  if (adminDepartments && !adminDashboard) {
+    import('./admin.js').then(({ loadDepartments, renderDepartments, hydrateAdminDashboard }) => {
+      loadDepartments().then(depts => {
+        renderDepartments(depts, container);
+      });
+      hydrateAdminDashboard(container);
+    });
+    hydrateModals(container);
+    return;
+  }
+
+  // Check if we're on admin designations page
+  const adminDesignations = container.querySelector('#designations-table');
+  if (adminDesignations && !adminDashboard) {
+    import('./admin.js').then(({ loadDesignations, renderDesignations, loadDepartments, hydrateAdminDashboard }) => {
+      loadDesignations().then(desgs => {
+        renderDesignations(desgs, container);
+      });
+      loadDepartments().then(depts => {
+        const filterSelect = container.querySelector('#designations-filter-dept');
+        if (filterSelect) {
+          filterSelect.innerHTML = '<option value="">All Departments</option>' +
+            depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          filterSelect.addEventListener('change', async () => {
+            const deptId = filterSelect.value;
+            const filtered = await loadDesignations(deptId || null);
+            renderDesignations(filtered, container);
+          });
+        }
+      });
+      hydrateAdminDashboard(container);
+    });
+    hydrateModals(container);
+    return;
+  }
+
+  // Check if we're on admin user roles page
+  const adminUserRoles = container.querySelector('#user-roles-table');
+  if (adminUserRoles) {
+    // User roles functionality will be added when server API is ready
+    showToast('User roles management coming soon', 'info');
+    return;
+  }
+
+  // Check if we're on admin reporting page
+  const adminReporting = container.querySelector('[data-action="export-users-pdf"]');
+  if (adminReporting) {
+    import('./admin.js').then(({ loadAllUsers, loadDepartments, loadDesignations, exportToCSV, exportToPDF }) => {
+      // Wire up export buttons
+      container.querySelector('[data-action="export-users-pdf"]')?.addEventListener('click', async () => {
+        const users = await loadAllUsers();
+        exportToPDF(users, 'Users Report', 'users-report.pdf');
+      });
+      container.querySelector('[data-action="export-users-csv"]')?.addEventListener('click', async () => {
+        const users = await loadAllUsers();
+        exportToCSV(users, 'users-report.csv');
+      });
+      container.querySelector('[data-action="export-departments-pdf"]')?.addEventListener('click', async () => {
+        const depts = await loadDepartments();
+        exportToPDF(depts, 'Departments Report', 'departments-report.pdf');
+      });
+      container.querySelector('[data-action="export-departments-csv"]')?.addEventListener('click', async () => {
+        const depts = await loadDepartments();
+        exportToCSV(depts, 'departments-report.csv');
+      });
+      container.querySelector('[data-action="export-designations-pdf"]')?.addEventListener('click', async () => {
+        const desgs = await loadDesignations();
+        exportToPDF(desgs, 'Designations Report', 'designations-report.pdf');
+      });
+      container.querySelector('[data-action="export-designations-csv"]')?.addEventListener('click', async () => {
+        const desgs = await loadDesignations();
+        exportToCSV(desgs, 'designations-report.csv');
+      });
+      container.querySelector('[data-action="export-user-roles-pdf"]')?.addEventListener('click', async () => {
+        showToast('User roles export coming soon', 'info');
+      });
+      container.querySelector('[data-action="export-user-roles-csv"]')?.addEventListener('click', async () => {
+        showToast('User roles export coming soon', 'info');
+      });
+      container.querySelector('[data-action="refresh-reports"]')?.addEventListener('click', () => {
+        showToast('Reports refreshed', 'success');
+      });
+    });
     return;
   }
 

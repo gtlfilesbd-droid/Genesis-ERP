@@ -10,26 +10,31 @@
   </div>
 
   <div class="grid-responsive mb-6">
-    <div class="card kpi-card">
+    <a href="#admin/active-users" data-route="admin/active-users" class="card kpi-card" style="text-decoration: none; color: inherit; cursor: pointer;">
+      <div class="kpi-label">Active Users</div>
+      <div class="kpi-value" id="active-users-count">--</div>
+      <div class="text-sm text-success">Currently active</div>
+    </a>
+    <a href="#admin/pending-users" data-route="admin/pending-users" class="card kpi-card" style="text-decoration: none; color: inherit; cursor: pointer;">
       <div class="kpi-label">Pending Users</div>
       <div class="kpi-value" id="pending-users-count">--</div>
       <div class="text-sm text-warning">Awaiting approval</div>
-    </div>
-    <div class="card kpi-card">
+    </a>
+    <a href="#admin/total-users" data-route="admin/total-users" class="card kpi-card" style="text-decoration: none; color: inherit; cursor: pointer;">
       <div class="kpi-label">Total Users</div>
       <div class="kpi-value" id="total-users-count">--</div>
       <div class="text-sm text-slate-500">All registered</div>
-    </div>
-    <div class="card kpi-card">
+    </a>
+    <a href="#admin/departments" data-route="admin/departments" class="card kpi-card" style="text-decoration: none; color: inherit; cursor: pointer;">
       <div class="kpi-label">Departments</div>
       <div class="kpi-value" id="departments-count">--</div>
       <div class="text-sm text-slate-500">Active</div>
-    </div>
-    <div class="card kpi-card">
+    </a>
+    <a href="#admin/designations" data-route="admin/designations" class="card kpi-card" style="text-decoration: none; color: inherit; cursor: pointer;">
       <div class="kpi-label">Designations</div>
       <div class="kpi-value" id="designations-count">--</div>
       <div class="text-sm text-slate-500">Total</div>
-    </div>
+    </a>
   </div>
 
   <div class="grid grid-cols-2 gap-5 auto-rows-max mb-5">

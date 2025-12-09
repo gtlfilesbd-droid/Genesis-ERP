@@ -153,9 +153,17 @@ export async function signup(name, email, username, password) {
 }
 
 // Logout function
-export function logout() {
+export async function logout() {
   setToken(null);
   setCurrentUser(null);
+  
+  // Unmount frame (sidebar and navbar)
+  try {
+    const { unmountFrame } = await import('./ui.js');
+    await unmountFrame();
+  } catch (error) {
+    console.error('[Auth] Error unmounting frame:', error);
+  }
   
   // Show logout message (if notifications are available)
   try {

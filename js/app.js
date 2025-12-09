@@ -60,7 +60,7 @@ async function bootstrap() {
     const publicRoutes = ['login', 'signup'];
     const isPublicRoute = publicRoutes.includes(hash);
     
-    // Mount UI frame only if authenticated or if it's a public route (router will handle auth)
+    // Mount UI frame only if authenticated and not on public route
     const { verifyToken } = await import('./auth.js');
     const authenticated = await verifyToken();
     
@@ -70,8 +70,12 @@ async function bootstrap() {
     } else if (!isPublicRoute) {
       // Not authenticated and not on public route - router will redirect to login
       console.log('[App] User not authenticated, router will redirect to login...');
+      // Ensure frame is hidden
+      await unmountFrame();
     } else {
       console.log('[App] Public route, skipping frame mount...');
+      // Ensure frame is hidden on public routes
+      await unmountFrame();
     }
     
     console.log('[App] Bootstrap complete');

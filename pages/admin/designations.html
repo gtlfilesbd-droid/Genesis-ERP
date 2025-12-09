@@ -1,0 +1,51 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Admin Portal</div>
+      <h1>Designations</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" data-action="add-designation">Add Designation</button>
+      <button class="btn btn-outline" data-action="refresh-designations">Refresh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="panel-header">
+      <h3 class="m-0">Designations List</h3>
+      <select class="input" id="designations-filter-dept">
+        <option value="">All Departments</option>
+      </select>
+    </div>
+    <div class="table-wrapper" id="designations-table">
+      <div class="loading-state text-slate-500 text-sm">Loading...</div>
+    </div>
+  </div>
+</section>
+
+<!-- Add Designation Modal -->
+<div id="modal-add-designation" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Designation</h3>
+      <button class="btn btn-ghost" data-modal-close>&times;</button>
+    </div>
+    <form id="form-add-designation" class="modal-body">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+        <select name="department_id" required class="input w-full" id="designation-dept-select">
+          <option value="">Select department</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Designation Title</label>
+        <input type="text" name="title" required class="input w-full" placeholder="Enter designation title" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Designation</button>
+      </div>
+    </form>
+  </div>
+</div>
+

@@ -1,0 +1,42 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Admin Portal</div>
+      <h1>Departments</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" data-action="add-department">Add Department</button>
+      <button class="btn btn-outline" data-action="refresh-departments">Refresh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="panel-header">
+      <h3 class="m-0">Departments List</h3>
+    </div>
+    <div class="table-wrapper" id="departments-table">
+      <div class="loading-state text-slate-500 text-sm">Loading...</div>
+    </div>
+  </div>
+</section>
+
+<!-- Add Department Modal -->
+<div id="modal-add-department" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Department</h3>
+      <button class="btn btn-ghost" data-modal-close>&times;</button>
+    </div>
+    <form id="form-add-department" class="modal-body">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Department Name</label>
+        <input type="text" name="name" required class="input w-full" placeholder="Enter department name" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Department</button>
+      </div>
+    </form>
+  </div>
+</div>
+
