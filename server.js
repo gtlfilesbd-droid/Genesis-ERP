@@ -206,6 +206,43 @@ async function initDatabase() {
       console.warn('[Server] Migration check failed (table may already have columns):', error.message);
     }
 
+    // Migration: Ensure all existing users have 'dashboard' permission
+    try {
+      console.log('[Server] Running migration: Ensuring all users have dashboard permission...');
+      const allUsers = executeQueryAll('SELECT id, permissions FROM users');
+      let updatedCount = 0;
+      
+      for (const user of allUsers) {
+        let permissions = [];
+        if (user.permissions) {
+          try {
+            permissions = JSON.parse(user.permissions);
+          } catch (e) {
+            permissions = [];
+          }
+        }
+        
+        // Add dashboard permission if not present
+        if (!permissions.includes('dashboard')) {
+          permissions.push('dashboard');
+          const permissionsJson = JSON.stringify(permissions);
+          const updateStmt = db.prepare('UPDATE users SET permissions = ? WHERE id = ?');
+          updateStmt.run([permissionsJson, user.id]);
+          updateStmt.free();
+          updatedCount++;
+        }
+      }
+      
+      if (updatedCount > 0) {
+        console.log(`[Server] Migration complete: Added dashboard permission to ${updatedCount} user(s)`);
+        saveDatabase();
+      } else {
+        console.log('[Server] Migration complete: All users already have dashboard permission');
+      }
+    } catch (error) {
+      console.error('[Server] Error during dashboard permission migration:', error);
+    }
+
     // Departments table
     db.run(`
       CREATE TABLE IF NOT EXISTS departments (
@@ -255,8 +292,10 @@ async function initDatabase() {
     if (existingUsers.length === 0) {
       const adminPassword = await bcrypt.hash('admin123', 10);
       const adminId = `USER-${Date.now()}`;
-      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
-      stmt.run([adminId, 'System Admin', 'admin@genesis.com', 'admin', adminPassword, 'admin', 'approved']);
+      // Admin users get dashboard permission by default
+      const adminPermissions = JSON.stringify(['dashboard']);
+      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status, permissions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      stmt.run([adminId, 'System Admin', 'admin@genesis.com', 'admin', adminPassword, 'admin', 'approved', adminPermissions]);
       stmt.free();
       console.log('[Server] Default admin user created: username=admin, password=admin123');
     }
@@ -446,9 +485,13 @@ initDatabase().then(() => {
       const id = `USER-${Date.now()}`;
       const createdAt = new Date().toISOString();
 
-      // Insert user with pending status
-      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status, department_id, designation_id, phone, address, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-      stmt.run([id, name, email, username, hashedPassword, 'user', 'pending', department_id, designation_id, mobile, address, createdAt, createdAt]);
+      // Ensure dashboard permission is included by default
+      const defaultPermissions = ['dashboard'];
+      const permissionsJson = JSON.stringify(defaultPermissions);
+
+      // Insert user with pending status and default dashboard permission
+      const stmt = db.prepare('INSERT INTO users (id, name, email, username, password, role, status, department_id, designation_id, phone, address, permissions, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      stmt.run([id, name, email, username, hashedPassword, 'user', 'pending', department_id, designation_id, mobile, address, permissionsJson, createdAt, createdAt]);
       stmt.free();
       saveDatabase();
 
@@ -1223,9 +1266,14 @@ initDatabase().then(() => {
 
       // Update user permissions in users table (for quick access)
       const rolePermissions = JSON.parse(role.permissions || '[]');
-      const userPermissions = JSON.stringify(rolePermissions);
+      // Ensure dashboard permission is always included
+      let userPermissions = rolePermissions;
+      if (!userPermissions.includes('dashboard')) {
+        userPermissions = [...userPermissions, 'dashboard'];
+      }
+      const userPermissionsJson = JSON.stringify(userPermissions);
       const updateStmt = db.prepare('UPDATE users SET permissions = ? WHERE id = ?');
-      updateStmt.run([userPermissions, user_id]);
+      updateStmt.run([userPermissionsJson, user_id]);
       updateStmt.free();
       saveDatabase();
 
@@ -1430,7 +1478,7 @@ initDatabase().then(() => {
   app.put('/api/admin/permissions/user/:id', authenticateToken, requireRole('admin'), (req, res) => {
     try {
       const { id } = req.params;
-      const { permissions } = req.body;
+      let { permissions } = req.body;
       
       if (!Array.isArray(permissions)) {
         return res.status(400).json({ error: 'Permissions must be an array' });
@@ -1439,6 +1487,11 @@ initDatabase().then(() => {
       const user = executeQuery('SELECT * FROM users WHERE id = ?', [id]);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Ensure dashboard permission is always included
+      if (!permissions.includes('dashboard')) {
+        permissions = [...permissions, 'dashboard'];
       }
 
       const permissionsJson = JSON.stringify(permissions);
@@ -1507,8 +1560,14 @@ initDatabase().then(() => {
       // Update all users with this role assigned
       const assignments = executeQueryAll('SELECT user_id FROM user_role_assignments WHERE role_id = ?', [id]);
       assignments.forEach(assignment => {
+        // Ensure dashboard permission is always included
+        let userPermissions = permissions;
+        if (!userPermissions.includes('dashboard')) {
+          userPermissions = [...userPermissions, 'dashboard'];
+        }
+        const userPermissionsJson = JSON.stringify(userPermissions);
         const updateStmt = db.prepare('UPDATE users SET permissions = ? WHERE id = ?');
-        updateStmt.run([permissionsJson, assignment.user_id]);
+        updateStmt.run([userPermissionsJson, assignment.user_id]);
         updateStmt.free();
       });
       saveDatabase();

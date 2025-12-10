@@ -1105,33 +1105,243 @@ function updateRoleBadges(role) {
 }
 
 // Apply permission-based visibility to sidebar items
-async function applyPermissionVisibility() {
+// Permission aliases (for backward compatibility and name variations)
+const PERMISSION_ALIASES = {
+  'add_product': 'create_product',
+  'create_product': 'create_product',
+};
+
+// Function to check if user has a permission, handling singular/plural variations
+function hasPermission(userPermissions, requiredPermission) {
+  // Direct match
+  if (userPermissions.includes(requiredPermission)) {
+    return true;
+  }
+  
+  // Check alias mapping (e.g., add_product -> create_product)
+  const aliasPermission = PERMISSION_ALIASES[requiredPermission];
+  if (aliasPermission && userPermissions.includes(aliasPermission)) {
+    return true;
+  }
+  
+  // Handle singular/plural variations
+  // If required is plural (ends with 's'), check for singular version
+  if (requiredPermission.endsWith('s')) {
+    const singular = requiredPermission.slice(0, -1);
+    if (userPermissions.includes(singular)) {
+      return true;
+    }
+  }
+  
+  // If required is singular, check for plural version
+  if (!requiredPermission.endsWith('s')) {
+    const plural = requiredPermission + 's';
+    if (userPermissions.includes(plural)) {
+      return true;
+    }
+  }
+  
+  // Handle specific known variations
+  // Note: Users need to be assigned the correct permissions via Permission Management page
+  // Required permissions for sidebar items:
+  // - Products: view_product, create_product
+  // - BOQs: view_boq, create_boq
+  // - Offers: view_offers, create_offer
+  // - Requests: view_requests, create_request
+  // - Reports: view_reports, create_report (handled below)
+  const variations = {
+    'view_reports': ['view_report', 'export_report', 'create_report'],
+    'view_report': ['view_reports', 'export_report', 'create_report'],
+    'create_reports': ['create_report', 'view_report'],
+    'create_report': ['create_reports', 'view_report'],
+    'export_reports': ['export_report', 'view_report', 'create_report'],
+    'export_report': ['export_reports', 'view_report', 'create_report'],
+  };
+  
+  if (variations[requiredPermission]) {
+    for (const variant of variations[requiredPermission]) {
+      if (userPermissions.includes(variant)) {
+        return true;
+      }
+    }
+  }
+  
+  // Reverse check: if user has a variation of required permission
+  for (const userPerm of userPermissions) {
+    if (variations[userPerm]) {
+      if (variations[userPerm].includes(requiredPermission)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+export async function applyPermissionVisibility() {
+  // Check localStorage directly first
+  const storedUser = localStorage.getItem('genesis-user');
+  console.log('[UI] ===== EARLY DEBUG - localStorage check =====');
+  console.log('[UI] Raw localStorage user string:', storedUser);
+  if (storedUser) {
+    try {
+      const parsedStored = JSON.parse(storedUser);
+      console.log('[UI] Parsed localStorage user:', parsedStored);
+      console.log('[UI] localStorage permissions:', parsedStored.permissions);
+      console.log('[UI] localStorage permissions type:', typeof parsedStored.permissions);
+      console.log('[UI] localStorage permissions is array:', Array.isArray(parsedStored.permissions));
+    } catch (e) {
+      console.error('[UI] Error parsing localStorage user:', e);
+    }
+  }
+  console.log('[UI] ===== END EARLY DEBUG =====');
+  
   const user = getCurrentUser();
-  if (!user) return;
-  console.log('[UI] applyPermissionVisibility role=', user.role, 'perms=', user.permissions);
+  if (!user) {
+    console.warn('[UI] applyPermissionVisibility: No user found');
+    return;
+  }
+  
+  console.log('[UI] ===== applyPermissionVisibility START =====');
+  console.log('[UI] User object (full):', user);
+  console.log('[UI] User ID:', user.id);
+  console.log('[UI] User role:', user.role);
+  console.log('[UI] User permissions (raw):', user.permissions);
+  console.log('[UI] User permissions type:', typeof user.permissions);
+  console.log('[UI] User permissions is array:', Array.isArray(user.permissions));
+  console.log('[UI] User permissions length:', Array.isArray(user.permissions) ? user.permissions.length : 'N/A');
   
   // Admin users see all items
   if (user.role === 'admin') {
+    console.log('[UI] Admin user - showing all items');
     document.querySelectorAll("[data-permission]").forEach((el) => {
       el.style.display = "";
     });
+    console.log('[UI] ===== applyPermissionVisibility END (admin) =====');
     return;
   }
   
   // For regular users, check permissions (default: hide if none)
-  const permissions = Array.isArray(user.permissions)
-    ? user.permissions
-    : [];
+  let permissions = [];
+  if (Array.isArray(user.permissions)) {
+    permissions = user.permissions;
+  } else if (typeof user.permissions === 'string') {
+    try {
+      permissions = JSON.parse(user.permissions);
+      console.log('[UI] Parsed permissions from JSON string:', permissions);
+    } catch (e) {
+      console.warn('[UI] Failed to parse permissions JSON string:', e);
+      permissions = [];
+    }
+  } else {
+    console.warn('[UI] Permissions is not an array or string, using empty array');
+    permissions = [];
+  }
+  
+  // Log actual permission values
+  console.log('[UI] ===== PERMISSION DEBUG INFO =====');
+  console.log('[UI] Final permissions array:', permissions);
+  console.log('[UI] Permissions array (stringified):', JSON.stringify(permissions));
+  console.log('[UI] Permissions array (spread):', [...permissions]);
+  console.log('[UI] Permissions count:', permissions.length);
+  
+  // Ensure all permissions are strings for comparison
+  const permissionStrings = permissions.map(p => {
+    if (typeof p === 'string') return p;
+    if (typeof p === 'object' && p !== null) {
+      // If permission is an object, try to get a string value
+      return String(p);
+    }
+    return String(p);
+  });
+  
+  console.log('[UI] Permission strings array:', permissionStrings);
+  console.log('[UI] Permission strings (JSON):', JSON.stringify(permissionStrings));
+  console.log('[UI] Permission strings length:', permissionStrings.length);
+  console.log('[UI] ===== END PERMISSION DEBUG =====');
+  
+  // Get all sidebar items with permissions
+  const sidebarItems = document.querySelectorAll("[data-permission]");
+  console.log('[UI] Found', sidebarItems.length, 'sidebar items with data-permission attribute');
+  
+  // If no sidebar items found, wait a bit and retry (sidebar might still be loading)
+  if (sidebarItems.length === 0) {
+    console.warn('[UI] No sidebar items found, sidebar might still be loading. Retrying in 100ms...');
+    setTimeout(() => {
+      applyPermissionVisibility();
+    }, 100);
+    return;
+  }
+  
+  const visibleItems = [];
+  const hiddenItems = [];
   
   // Hide items that user doesn't have permission for
-  document.querySelectorAll("[data-permission]").forEach((el) => {
+  sidebarItems.forEach((el) => {
     const requiredPermission = el.getAttribute("data-permission");
-    if (permissions.includes(requiredPermission)) {
+    const itemText = el.textContent.trim();
+    const itemHref = el.getAttribute("href");
+    
+    // Use the hasPermission function to check with all variations
+    const userHasPermission = hasPermission(permissionStrings, requiredPermission);
+    
+    console.log('[UI] Checking item:', itemText);
+    console.log('[UI]   - Required permission:', requiredPermission);
+    console.log('[UI]   - User permissions:', permissionStrings);
+    console.log('[UI]   - Final hasPermission:', userHasPermission);
+    
+    if (userHasPermission) {
       el.style.display = "";
+      visibleItems.push({ item: itemText, permission: requiredPermission, href: itemHref });
     } else {
       el.style.display = "none";
+      hiddenItems.push({ item: itemText, permission: requiredPermission, href: itemHref });
     }
   });
+  
+  console.log('[UI] Visible items:', visibleItems);
+  console.log('[UI] Hidden items:', hiddenItems);
+  console.log('[UI] ===== applyPermissionVisibility END =====');
+}
+
+// Reload sidebar component and reapply permissions
+export async function reloadSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) {
+    console.warn('[UI] Sidebar element not found, cannot reload');
+    return;
+  }
+
+  try {
+    console.log('[UI] Reloading sidebar component...');
+    await loadComponent("sidebar", "sidebar.html");
+    
+    // Re-wire navigation and apply permissions
+    wireNavigation();
+    hydrateRoleSelector();
+    hydrateUserDisplay();
+    wireLogout();
+    hydrateUserDropdown();
+    applyPermissionVisibility();
+    
+    const role = getCurrentRole();
+    applyRoleVisibility(role);
+    updateRoleBadges(role);
+    
+    // Show/hide nav sections based on role
+    document.querySelectorAll('[data-role]').forEach((navSection) => {
+      const allowedRoles = navSection.getAttribute('data-role').split(',').map(r => r.trim());
+      if (allowedRoles.includes(role)) {
+        navSection.style.display = '';
+      } else {
+        navSection.style.display = 'none';
+      }
+    });
+    
+    console.log('[UI] ✓ Sidebar reloaded and permissions applied');
+  } catch (error) {
+    console.error('[UI] Error reloading sidebar:', error);
+  }
 }
 
 export async function mountFrame() {

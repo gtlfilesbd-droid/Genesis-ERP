@@ -1985,6 +1985,56 @@ export async function updateRolePermissions(roleId, permissions) {
   }
 }
 
+// Remove a single permission from user
+export async function removeUserPermission(userId, permissionToRemove) {
+  try {
+    const data = await loadUserPermissions(userId);
+    const currentPermissions = data.permissions || [];
+    const updatedPermissions = currentPermissions.filter(p => p !== permissionToRemove);
+    await updateUserPermissions(userId, updatedPermissions);
+    return updatedPermissions;
+  } catch (error) {
+    console.error('[Admin] Error removing user permission:', error);
+    throw error;
+  }
+}
+
+// Remove a single permission from role
+export async function removeRolePermission(roleId, permissionToRemove) {
+  try {
+    const data = await loadRolePermissions(roleId);
+    const currentPermissions = data.permissions || [];
+    const updatedPermissions = currentPermissions.filter(p => p !== permissionToRemove);
+    await updateRolePermissions(roleId, updatedPermissions);
+    return updatedPermissions;
+  } catch (error) {
+    console.error('[Admin] Error removing role permission:', error);
+    throw error;
+  }
+}
+
+// Replace all permissions for user (clear and set new)
+export async function replaceUserPermissions(userId, newPermissions) {
+  try {
+    await updateUserPermissions(userId, newPermissions);
+    return newPermissions;
+  } catch (error) {
+    console.error('[Admin] Error replacing user permissions:', error);
+    throw error;
+  }
+}
+
+// Replace all permissions for role (clear and set new)
+export async function replaceRolePermissions(roleId, newPermissions) {
+  try {
+    await updateRolePermissions(roleId, newPermissions);
+    return newPermissions;
+  } catch (error) {
+    console.error('[Admin] Error replacing role permissions:', error);
+    throw error;
+  }
+}
+
 // Hydrate permissions management page
 export async function hydratePermissionsPage(container) {
   try {
@@ -2103,14 +2153,51 @@ export async function hydratePermissionsPage(container) {
           userSelector.value = '';
         }
         currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a user or role to view their current permissions</div>';
+        container.querySelector('#manage-permissions-panel')?.classList.add('hidden');
       });
     });
+
+    // Function to render manage permissions list
+    const renderManagePermissionsList = (permissions, isUser = true) => {
+      const managePanel = container.querySelector('#manage-permissions-panel');
+      const manageList = container.querySelector('#manage-permissions-list');
+      const manageEmpty = container.querySelector('#manage-permissions-empty');
+      
+      if (!permissions || permissions.length === 0) {
+        managePanel?.classList.add('hidden');
+        return;
+      }
+      
+      managePanel?.classList.remove('hidden');
+      manageEmpty?.classList.add('hidden');
+      
+      manageList.innerHTML = permissions.map(perm => {
+        const label = perm.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `
+          <div class="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="text-sm font-medium text-slate-700">${label}</span>
+            <button 
+              type="button" 
+              class="btn btn-ghost btn-sm text-red-600 hover:text-red-700" 
+              data-remove-permission="${perm}"
+              data-is-user="${isUser}"
+              title="Remove permission"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    };
 
     // User selection handler
     userSelector.addEventListener('change', async (e) => {
       selectedUserId = e.target.value;
       if (!selectedUserId) {
         currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a user to view their current permissions</div>';
+        container.querySelector('#manage-permissions-panel')?.classList.add('hidden');
         return;
       }
 
@@ -2128,6 +2215,9 @@ export async function hydratePermissionsPage(container) {
             </div>
           </div>
         `;
+        
+        // Render manage permissions list
+        renderManagePermissionsList(currentUserPermissions, true);
       } catch (error) {
         showToast('Failed to load user permissions', 'error');
       }
@@ -2138,6 +2228,7 @@ export async function hydratePermissionsPage(container) {
       selectedRoleId = e.target.value;
       if (!selectedRoleId) {
         currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a role to view their current permissions</div>';
+        container.querySelector('#manage-permissions-panel')?.classList.add('hidden');
         return;
       }
 
@@ -2155,6 +2246,9 @@ export async function hydratePermissionsPage(container) {
             </div>
           </div>
         `;
+        
+        // Render manage permissions list
+        renderManagePermissionsList(currentRolePermissions, false);
       } catch (error) {
         showToast('Failed to load role permissions', 'error');
       }
@@ -2205,11 +2299,31 @@ export async function hydratePermissionsPage(container) {
               </div>
             </div>
           `;
+          
+          // Refresh manage permissions list
+          renderManagePermissionsList(currentUserPermissions, true);
 
-          // Emit event to refresh sidebar
+          // Emit event to refresh sidebar (with fallback)
           document.dispatchEvent(new CustomEvent('permissions:updated', { 
             detail: { userId: selectedUserId, permissions: newPerms } 
           }));
+          
+          // Fallback: Directly refresh if this is the current user (in case event doesn't fire)
+          setTimeout(async () => {
+            try {
+              const { getCurrentUser } = await import('./auth.js');
+              const currentUser = getCurrentUser();
+              if (currentUser && currentUser.id === selectedUserId) {
+                console.log('[Admin] Fallback: Directly refreshing permissions for current user');
+                const { refreshUserPermissions } = await import('./auth.js');
+                await refreshUserPermissions();
+                const { reloadSidebar } = await import('./ui.js');
+                await reloadSidebar();
+              }
+            } catch (error) {
+              console.error('[Admin] Fallback refresh failed:', error);
+            }
+          }, 100);
         } else {
           if (!selectedRoleId) {
             showToast('Please select a role', 'error');
@@ -2237,6 +2351,9 @@ export async function hydratePermissionsPage(container) {
               </div>
             </div>
           `;
+          
+          // Refresh manage permissions list
+          renderManagePermissionsList(currentRolePermissions, false);
         }
 
         // Clear checkboxes
@@ -2257,6 +2374,228 @@ export async function hydratePermissionsPage(container) {
       selectedFeature = '';
       selectedFeatureData = null;
       crudPermissionsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    });
+
+    // Remove permission button handlers (delegated event listener)
+    const manageList = container.querySelector('#manage-permissions-list');
+    manageList?.addEventListener('click', async (e) => {
+      const removeBtn = e.target.closest('[data-remove-permission]');
+      if (!removeBtn) return;
+
+      const permissionToRemove = removeBtn.getAttribute('data-remove-permission');
+      const isUser = removeBtn.getAttribute('data-is-user') === 'true';
+
+      if (!confirm(`Are you sure you want to remove the permission "${permissionToRemove}"?`)) {
+        return;
+      }
+
+      try {
+        if (isUser) {
+          if (!selectedUserId) {
+            showToast('No user selected', 'error');
+            return;
+          }
+          await removeUserPermission(selectedUserId, permissionToRemove);
+          showToast('Permission removed successfully', 'success');
+          
+          // Refresh user permissions display
+          const data = await loadUserPermissions(selectedUserId);
+          currentUserPermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.user.name} (${data.user.email})</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentUserPermissions.length > 0 
+                  ? currentUserPermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList(currentUserPermissions, true);
+          
+          // Emit event to refresh sidebar
+          document.dispatchEvent(new CustomEvent('permissions:updated', { 
+            detail: { userId: selectedUserId, permissions: currentUserPermissions } 
+          }));
+        } else {
+          if (!selectedRoleId) {
+            showToast('No role selected', 'error');
+            return;
+          }
+          await removeRolePermission(selectedRoleId, permissionToRemove);
+          showToast('Permission removed successfully', 'success');
+          
+          // Refresh role permissions display
+          const data = await loadRolePermissions(selectedRoleId);
+          currentRolePermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.role.name}</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentRolePermissions.length > 0 
+                  ? currentRolePermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList(currentRolePermissions, false);
+        }
+      } catch (error) {
+        console.error('[Admin] Error removing permission:', error);
+        showToast(error.message || 'Failed to remove permission', 'error');
+      }
+    });
+
+    // Replace all permissions button handler
+    const replaceAllBtn = container.querySelector('#btn-replace-all-permissions');
+    replaceAllBtn?.addEventListener('click', async () => {
+      const assignType = document.querySelector('input[name="assign-type"]:checked')?.value;
+      
+      if (assignType === 'user') {
+        if (!selectedUserId) {
+          showToast('Please select a user first', 'error');
+          return;
+        }
+        
+        const newPerms = prompt('Enter new permissions (comma-separated):', 
+          (currentUserPermissions || []).join(', '));
+        if (newPerms === null) return; // User cancelled
+        
+        const permissionsArray = newPerms.split(',').map(p => p.trim()).filter(p => p);
+        
+        if (!confirm(`Replace all permissions with: ${permissionsArray.join(', ')}?`)) {
+          return;
+        }
+        
+        try {
+          await replaceUserPermissions(selectedUserId, permissionsArray);
+          showToast('All permissions replaced successfully', 'success');
+          
+          // Refresh display
+          const data = await loadUserPermissions(selectedUserId);
+          currentUserPermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.user.name} (${data.user.email})</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentUserPermissions.length > 0 
+                  ? currentUserPermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList(currentUserPermissions, true);
+          
+          // Emit event to refresh sidebar
+          document.dispatchEvent(new CustomEvent('permissions:updated', { 
+            detail: { userId: selectedUserId, permissions: currentUserPermissions } 
+          }));
+        } catch (error) {
+          showToast(error.message || 'Failed to replace permissions', 'error');
+        }
+      } else {
+        if (!selectedRoleId) {
+          showToast('Please select a role first', 'error');
+          return;
+        }
+        
+        const newPerms = prompt('Enter new permissions (comma-separated):', 
+          (currentRolePermissions || []).join(', '));
+        if (newPerms === null) return;
+        
+        const permissionsArray = newPerms.split(',').map(p => p.trim()).filter(p => p);
+        
+        if (!confirm(`Replace all permissions with: ${permissionsArray.join(', ')}?`)) {
+          return;
+        }
+        
+        try {
+          await replaceRolePermissions(selectedRoleId, permissionsArray);
+          showToast('All permissions replaced successfully', 'success');
+          
+          // Refresh display
+          const data = await loadRolePermissions(selectedRoleId);
+          currentRolePermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.role.name}</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentRolePermissions.length > 0 
+                  ? currentRolePermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList(currentRolePermissions, false);
+        } catch (error) {
+          showToast(error.message || 'Failed to replace permissions', 'error');
+        }
+      }
+    });
+
+    // Clear all permissions button handler
+    const clearAllBtn = container.querySelector('#btn-clear-all-permissions');
+    clearAllBtn?.addEventListener('click', async () => {
+      const assignType = document.querySelector('input[name="assign-type"]:checked')?.value;
+      
+      if (!confirm('Are you sure you want to clear ALL permissions? This cannot be undone.')) {
+        return;
+      }
+      
+      try {
+        if (assignType === 'user') {
+          if (!selectedUserId) {
+            showToast('Please select a user first', 'error');
+            return;
+          }
+          await replaceUserPermissions(selectedUserId, []);
+          showToast('All permissions cleared successfully', 'success');
+          
+          // Refresh display
+          const data = await loadUserPermissions(selectedUserId);
+          currentUserPermissions = [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.user.name} (${data.user.email})</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="text-slate-400">No permissions assigned</span>
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList([], true);
+          
+          // Emit event to refresh sidebar
+          document.dispatchEvent(new CustomEvent('permissions:updated', { 
+            detail: { userId: selectedUserId, permissions: [] } 
+          }));
+        } else {
+          if (!selectedRoleId) {
+            showToast('Please select a role first', 'error');
+            return;
+          }
+          await replaceRolePermissions(selectedRoleId, []);
+          showToast('All permissions cleared successfully', 'success');
+          
+          // Refresh display
+          const data = await loadRolePermissions(selectedRoleId);
+          currentRolePermissions = [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.role.name}</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="text-slate-400">No permissions assigned</span>
+              </div>
+            </div>
+          `;
+          renderManagePermissionsList([], false);
+        }
+      } catch (error) {
+        showToast(error.message || 'Failed to clear permissions', 'error');
+      }
     });
 
     // Refresh button

@@ -23,6 +23,54 @@ window.addEventListener('unhandledrejection', (event) => {
 
 const view = document.getElementById("app-view");
 
+// Set up global permission update listener (always active)
+function setupGlobalPermissionListener() {
+  console.log('[App] Setting up global permission update listener...');
+  
+  document.addEventListener("permissions:updated", async (event) => {
+    const { userId, permissions } = event.detail || {};
+    console.log('[App] Permission update event received:', { userId, permissions });
+    
+    try {
+      const { getCurrentUser, refreshUserPermissions } = await import('./auth.js');
+      const { applyPermissionVisibility } = await import('./ui.js');
+      
+      const currentUser = getCurrentUser();
+      console.log('[App] Current user:', currentUser?.id, 'Updated user:', userId);
+      
+      // If permissions were updated for the current user, refresh their profile and sidebar
+      if (currentUser && currentUser.id === userId) {
+        console.log('[App] Current user permissions updated, refreshing...');
+        await refreshUserPermissions();
+        
+        // Reload sidebar component to ensure fresh HTML with correct permissions
+        const { reloadSidebar } = await import('./ui.js');
+        await reloadSidebar();
+        
+        console.log('[App] ✓ Sidebar reloaded after permission update');
+      } else {
+        console.log('[App] Permission update was for different user, skipping refresh');
+      }
+    } catch (error) {
+      console.error('[App] Error handling permission update:', error);
+    }
+  });
+
+  // Also listen for permission refresh events
+  document.addEventListener("permissions:refreshed", async (event) => {
+    console.log('[App] Permission refresh event received');
+    try {
+      const { reloadSidebar } = await import('./ui.js');
+      await reloadSidebar();
+      console.log('[App] ✓ Sidebar reloaded after permission refresh');
+    } catch (error) {
+      console.error('[App] Error reloading sidebar:', error);
+    }
+  });
+  
+  console.log('[App] ✓ Global permission listeners set up');
+}
+
 async function bootstrap() {
   if (!view) {
     console.error('[App] App view element not found');
@@ -50,6 +98,9 @@ async function bootstrap() {
       `;
       return;
     }
+    
+    // Set up global permission listeners (must be early in lifecycle)
+    setupGlobalPermissionListener();
     
     // Initialize router first (it will handle authentication redirects)
     console.log('[App] Initializing router...');

@@ -20,9 +20,33 @@ export function setToken(token) {
 // Get current user
 export function getCurrentUser() {
   const stored = localStorage.getItem(USER_KEY);
+  console.log('[Auth] getCurrentUser called, stored exists:', !!stored);
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const user = JSON.parse(stored);
+      console.log('[Auth] getCurrentUser: Parsed user object:', user);
+      console.log('[Auth] getCurrentUser: user.permissions before processing:', user.permissions);
+      console.log('[Auth] getCurrentUser: user.permissions type:', typeof user.permissions);
+      console.log('[Auth] getCurrentUser: user.permissions is array:', Array.isArray(user.permissions));
+      
+      // Ensure permissions are parsed if they're a JSON string
+      if (user && user.permissions && typeof user.permissions === 'string') {
+        try {
+          user.permissions = JSON.parse(user.permissions);
+          console.log('[Auth] getCurrentUser: Parsed permissions from JSON string:', user.permissions);
+        } catch (e) {
+          console.warn('[Auth] getCurrentUser: Failed to parse permissions JSON, using empty array:', e);
+          user.permissions = [];
+        }
+      } else if (user && !Array.isArray(user.permissions)) {
+        console.warn('[Auth] getCurrentUser: Permissions is not an array, setting to empty array. Type:', typeof user.permissions, 'Value:', user.permissions);
+        user.permissions = [];
+      }
+      
+      console.log('[Auth] getCurrentUser: Final user.permissions:', user.permissions);
+      console.log('[Auth] getCurrentUser: Final user.permissions length:', Array.isArray(user.permissions) ? user.permissions.length : 'N/A');
+      
+      return user;
     } catch (err) {
       console.warn("[Auth] Unable to parse stored user", err);
       return null;
@@ -34,12 +58,37 @@ export function getCurrentUser() {
 // Set current user
 export function setCurrentUser(user) {
   if (user) {
+    // Ensure permissions are parsed if they're a JSON string
+    if (user.permissions && typeof user.permissions === 'string') {
+      try {
+        user.permissions = JSON.parse(user.permissions);
+        console.log('[Auth] Parsed permissions from JSON string:', user.permissions);
+      } catch (e) {
+        console.warn('[Auth] Failed to parse permissions JSON, using empty array:', e);
+        user.permissions = [];
+      }
+    } else if (!Array.isArray(user.permissions)) {
+      console.warn('[Auth] Permissions is not an array, setting to empty array');
+      user.permissions = [];
+    }
+    
+    console.log('[Auth] ===== setCurrentUser START =====');
+    console.log('[Auth] User ID:', user.id);
+    console.log('[Auth] User name:', user.name);
+    console.log('[Auth] User role:', user.role);
+    console.log('[Auth] User permissions:', user.permissions);
+    console.log('[Auth] Permissions type:', typeof user.permissions);
+    console.log('[Auth] Permissions is array:', Array.isArray(user.permissions));
+    console.log('[Auth] Permissions length:', Array.isArray(user.permissions) ? user.permissions.length : 'N/A');
+    
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(ROLE_KEY, user.role || 'user');
-    console.log('[Auth] setCurrentUser role:', user.role, 'permissions:', user.permissions);
+    
     document.dispatchEvent(new CustomEvent("role:change", { detail: user.role }));
     // Trigger user data update event for UI refresh
     document.dispatchEvent(new CustomEvent("user:updated", { detail: user }));
+    
+    console.log('[Auth] ===== setCurrentUser END =====');
   } else {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ROLE_KEY);
@@ -74,25 +123,45 @@ export async function refreshUserPermissions() {
   try {
     const user = getCurrentUser();
     if (!user || !user.id) {
+      console.warn('[Auth] No current user found, cannot refresh permissions');
       return null;
     }
 
+    console.log('[Auth] Refreshing permissions for user:', user.id);
     const response = await fetch(`${API_BASE_URL}/user/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${getToken()}`,
       },
+      cache: 'no-cache', // Ensure fresh data
     });
 
     if (!response.ok) {
-      throw new Error('Failed to refresh permissions');
+      throw new Error(`Failed to refresh permissions: ${response.status} ${response.statusText}`);
     }
 
     const profile = await response.json();
+    
+    // Ensure permissions is an array
+    if (profile.permissions && typeof profile.permissions === 'string') {
+      try {
+        profile.permissions = JSON.parse(profile.permissions);
+      } catch (e) {
+        console.warn('[Auth] Failed to parse permissions JSON, using empty array');
+        profile.permissions = [];
+      }
+    } else if (!Array.isArray(profile.permissions)) {
+      profile.permissions = [];
+    }
+    
+    console.log('[Auth] Refreshed permissions:', profile.permissions);
     setCurrentUser(profile);
     
     // Emit event for sidebar refresh
     document.dispatchEvent(new CustomEvent('permissions:refreshed', { detail: profile }));
+    
+    // Also trigger user:updated event for other listeners
+    document.dispatchEvent(new CustomEvent('user:updated', { detail: profile }));
     
     return profile;
   } catch (error) {
@@ -149,9 +218,16 @@ export async function login(username, password) {
 }
 
     if (data.success && data.token && data.user) {
-      console.log('[Auth] login success role:', data.user.role, 'permissions:', data.user.permissions);
+      console.log('[Auth] ===== LOGIN SUCCESS =====');
+      console.log('[Auth] Login response data.user:', data.user);
+      console.log('[Auth] Login response data.user.permissions:', data.user.permissions);
+      console.log('[Auth] Login response data.user.permissions type:', typeof data.user.permissions);
+      console.log('[Auth] Login response data.user.permissions is array:', Array.isArray(data.user.permissions));
+      console.log('[Auth] Login response data.user.permissions length:', Array.isArray(data.user.permissions) ? data.user.permissions.length : 'N/A');
+      console.log('[Auth] Login response data.user.permissions (JSON):', JSON.stringify(data.user.permissions));
       setToken(data.token);
       setCurrentUser(data.user);
+      console.log('[Auth] ===== END LOGIN SUCCESS =====');
       return { success: true, user: data.user };
     }
 

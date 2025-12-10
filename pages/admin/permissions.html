@@ -79,13 +79,31 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card mb-5">
     <div class="panel-header">
       <h3 class="m-0">Current Permissions</h3>
     </div>
     <div class="p-4">
       <div id="current-permissions-display" class="text-slate-500 text-sm">
         Select a user or role to view their current permissions
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="manage-permissions-panel">
+    <div class="panel-header">
+      <h3 class="m-0">Manage Existing Permissions</h3>
+      <div class="flex gap-2">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-replace-all-permissions">Replace All</button>
+        <button type="button" class="btn btn-outline btn-sm text-red-600" id="btn-clear-all-permissions">Clear All</button>
+      </div>
+    </div>
+    <div class="p-4">
+      <div id="manage-permissions-list" class="space-y-2">
+        <!-- Permission items with remove buttons will be rendered here -->
+      </div>
+      <div id="manage-permissions-empty" class="text-slate-500 text-sm text-center py-4">
+        No permissions to manage. Select a user or role first.
       </div>
     </div>
   </div>
