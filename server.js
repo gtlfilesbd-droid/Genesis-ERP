@@ -743,6 +743,34 @@ initDatabase().then(() => {
     }
   });
 
+  // Admin: update user password
+  app.put('/api/admin/users/:id/password', authenticateToken, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+
+      if (!password || typeof password !== 'string' || password.trim().length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      }
+
+      const existingUser = executeQuery('SELECT * FROM users WHERE id = ?', [id]);
+      if (!existingUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password.trim(), 10);
+      const updatedAt = new Date().toISOString();
+      const stmt = db.prepare('UPDATE users SET password = ?, updatedAt = ? WHERE id = ?');
+      stmt.run([hashedPassword, updatedAt, id]);
+      stmt.free();
+      saveDatabase();
+
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Delete user
   app.delete('/api/admin/users/:id', authenticateToken, requireRole('admin'), (req, res) => {
     try {

@@ -78,6 +78,20 @@ export async function updateUser(id, userData) {
   }
 }
 
+// Update user password (admin)
+export async function updateUserPassword(id, password) {
+  try {
+    const result = await apiCall(`/admin/users/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error updating user password:', error);
+    throw error;
+  }
+}
+
 // Delete user
 export async function deleteUser(id) {
   try {
@@ -250,6 +264,7 @@ export function renderPendingUsers(users, container) {
             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
             <td>
               <button class="btn btn-ghost btn-sm" data-edit-user="${user.id}">Edit</button>
+              <button class="btn btn-outline btn-sm" data-reset-password="${user.id}">Reset Password</button>
               <button class="btn btn-primary btn-sm" data-approve-user="${user.id}">Approve</button>
               <button class="btn btn-outline btn-sm" data-reject-user="${user.id}">Reject</button>
             </td>
@@ -736,6 +751,7 @@ export function renderActiveUsers(users, container) {
             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
             <td>
               <button class="btn btn-ghost btn-sm" data-edit-user="${user.id}">Edit</button>
+              <button class="btn btn-outline btn-sm" data-reset-password="${user.id}">Reset Password</button>
               <button class="btn btn-outline btn-sm text-red-600" data-delete-user="${user.id}">Delete</button>
             </td>
           </tr>
@@ -791,6 +807,7 @@ export function renderTotalUsers(users, container) {
                 <button class="btn btn-primary btn-sm" data-approve-user="${user.id}">Approve</button>
                 <button class="btn btn-outline btn-sm" data-reject-user="${user.id}">Reject</button>
               ` : ''}
+              <button class="btn btn-outline btn-sm" data-reset-password="${user.id}">Reset Password</button>
               <button class="btn btn-outline btn-sm text-red-600" data-delete-user="${user.id}">Delete</button>
             </td>
           </tr>
@@ -848,6 +865,14 @@ async function wireUserActions(container, pageType) {
     btn.addEventListener('click', async () => {
       const userId = btn.dataset.editUser;
       await openEditUserModal(userId, container);
+    });
+  });
+
+  // Wire reset password buttons
+  container.querySelectorAll('[data-reset-password]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId = btn.dataset.resetPassword;
+      await openResetPasswordModal(userId, container, pageType);
     });
   });
 
@@ -968,6 +993,67 @@ async function openEditUserModal(userId, container) {
   } catch (error) {
     console.error('[Admin] Error opening edit user modal:', error);
     showToast('Failed to load user details', 'error');
+  }
+}
+
+// Open reset password modal
+async function openResetPasswordModal(userId, container, pageType) {
+  try {
+    const user = await loadUserById(userId);
+    const modal = container.querySelector('#modal-reset-password');
+    const form = container.querySelector('#form-reset-password');
+
+    if (!modal || !form) return;
+
+    form.querySelector('#reset-user-id').value = user.id;
+    form.querySelector('#reset-user-name').textContent = user.name || '--';
+    form.querySelector('#reset-user-email').textContent = user.email || '';
+    form.querySelector('#reset-user-password').value = '';
+    form.querySelector('#reset-user-password-confirm').value = '';
+
+    modal.classList.remove('hidden');
+
+    if (!form.dataset.bound) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pwd = form.querySelector('#reset-user-password').value.trim();
+        const confirmPwd = form.querySelector('#reset-user-password-confirm').value.trim();
+        const targetUserId = form.querySelector('#reset-user-id').value;
+
+        if (pwd.length < 6) {
+          showToast('Password must be at least 6 characters', 'error');
+          return;
+        }
+        if (pwd !== confirmPwd) {
+          showToast('Passwords do not match', 'error');
+          return;
+        }
+
+        try {
+          await updateUserPassword(targetUserId, pwd);
+          showToast('Password updated successfully', 'success');
+          modal.classList.add('hidden');
+          form.reset();
+
+          if (pageType === 'active') {
+            await refreshActiveUsersPage(container);
+            wireUserActions(container, 'active');
+          } else if (pageType === 'pending') {
+            await refreshPendingUsersPage(container);
+            wireUserActions(container, 'pending');
+          } else if (pageType === 'total') {
+            await refreshTotalUsersPage(container);
+            wireUserActions(container, 'total');
+          }
+        } catch (error) {
+          showToast(error.message || 'Failed to update password', 'error');
+        }
+      });
+      form.dataset.bound = 'true';
+    }
+  } catch (error) {
+    console.error('[Admin] Error opening reset password modal:', error);
+    showToast(error.message || 'Failed to open password reset', 'error');
   }
 }
 
