@@ -1,48 +1,366 @@
-<div class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-  <div class="card max-w-md w-full">
-    <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-slate-900 mb-2">Genesis ERP</h1>
-      <p class="text-slate-600">Sign in to your account</p>
+<div class="auth-container">
+  <div class="auth-background">
+    <div class="auth-pattern"></div>
+  </div>
+  
+  <div class="auth-content">
+    <div class="auth-card">
+      <!-- Logo and Branding -->
+      <div class="auth-header">
+        <div class="auth-logo">
+          <div class="logo-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="48" height="48" rx="12" fill="url(#logoGradient)"/>
+              <path d="M24 14L30 20H26V28H22V20H18L24 14Z" fill="white"/>
+              <path d="M18 30L24 36L30 30H26V22H22V30H18Z" fill="white" opacity="0.8"/>
+              <defs>
+                <linearGradient id="logoGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#2563eb"/>
+                  <stop offset="1" stop-color="#1d4ed8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="auth-brand">
+            <h1 class="brand-name">Genesis ERP</h1>
+            <p class="brand-tagline">Enterprise Resource Planning</p>
+          </div>
+        </div>
+        <div class="auth-welcome">
+          <h2 class="welcome-title">Welcome Back</h2>
+          <p class="welcome-subtitle">Sign in to your account to continue</p>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="username" class="form-label">
+            <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="currentColor"/>
+              <path d="M0 14C0 11.2386 2.23858 9 5 9H11C13.7614 9 16 11.2386 16 14V16H0V14Z" fill="currentColor"/>
+            </svg>
+            Username
+          </label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            required
+            class="form-input" 
+            placeholder="Enter your username"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">
+            <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 0C6.34315 0 5 1.34315 5 3V5H3C2.44772 5 2 5.44772 2 6V14C2 14.5523 2.44772 15 3 15H13C13.5523 15 14 14.5523 14 14V6C14 5.44772 13.5523 5 13 5H11V3C11 1.34315 9.65685 0 8 0ZM8 2C8.55228 2 9 2.44772 9 3V5H7V3C7 2.44772 7.44772 2 8 2Z" fill="currentColor"/>
+            </svg>
+            Password
+          </label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required
+            class="form-input" 
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div id="login-error" class="form-error hidden"></div>
+
+        <button type="submit" class="auth-button">
+          <span>Sign In</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="auth-divider">
+          <span>New to Genesis ERP?</span>
+        </div>
+
+        <div class="auth-footer">
+          <p class="footer-text">
+            Don't have an account? 
+            <a href="#signup" data-route="signup" class="footer-link">Create one now</a>
+          </p>
+        </div>
+      </form>
     </div>
-
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label for="username" class="block text-sm font-medium text-slate-700 mb-1">Username</label>
-        <input 
-          type="text" 
-          id="username" 
-          name="username" 
-          required
-          class="input w-full" 
-          placeholder="Enter your username"
-          autocomplete="username"
-        />
-      </div>
-
-      <div>
-        <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          required
-          class="input w-full" 
-          placeholder="Enter your password"
-          autocomplete="current-password"
-        />
-      </div>
-
-      <div id="login-error" class="hidden text-red-600 text-sm bg-red-50 p-3 rounded"></div>
-
-      <button type="submit" class="btn btn-primary w-full">
-        Sign In
-      </button>
-
-      <div class="text-center text-sm text-slate-600">
-        Don't have an account? 
-        <a href="#signup" data-route="signup" class="text-blue-600 hover:underline">Sign up</a>
-      </div>
-    </form>
   </div>
 </div>
 
+<style>
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
+}
+
+.auth-background {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+}
+
+.auth-pattern {
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  background-size: 200px 200px;
+  animation: patternMove 20s linear infinite;
+}
+
+@keyframes patternMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(200px, 200px); }
+}
+
+.auth-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-card {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.3));
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brand-name {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.brand-tagline {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auth-welcome {
+  margin-top: 1.5rem;
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.welcome-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.label-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.form-error {
+  padding: 0.875rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-error.hidden {
+  display: none;
+}
+
+.auth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  margin-top: 0.5rem;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.footer-text {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.footer-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .auth-container {
+    padding: 1rem;
+  }
+  
+  .auth-card {
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+  }
+  
+  .brand-name {
+    font-size: 1.75rem;
+  }
+  
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+}
+</style>
