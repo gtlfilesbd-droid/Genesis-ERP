@@ -36,6 +36,7 @@ export function setCurrentUser(user) {
   if (user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     localStorage.setItem(ROLE_KEY, user.role || 'user');
+    console.log('[Auth] setCurrentUser role:', user.role, 'permissions:', user.permissions);
     document.dispatchEvent(new CustomEvent("role:change", { detail: user.role }));
     // Trigger user data update event for UI refresh
     document.dispatchEvent(new CustomEvent("user:updated", { detail: user }));
@@ -116,6 +117,7 @@ export async function login(username, password) {
 }
 
     if (data.success && data.token && data.user) {
+      console.log('[Auth] login success role:', data.user.role, 'permissions:', data.user.permissions);
       setToken(data.token);
       setCurrentUser(data.user);
       return { success: true, user: data.user };
@@ -210,6 +212,7 @@ export async function verifyToken() {
 
     const data = await response.json();
     if (data.success && data.user) {
+      console.log('[Auth] verify token role:', data.user.role, 'permissions:', data.user.permissions);
       setCurrentUser(data.user);
       return true;
     }

@@ -107,6 +107,9 @@ async function handleRoute() {
   // Import auth functions dynamically to avoid circular dependencies
   const { isAuthenticated, isAdmin, verifyToken, getCurrentRole } = await import('./auth.js');
   const { mountFrame, unmountFrame } = await import('./ui.js');
+  const currentRole = getCurrentRole();
+  const currentUser = await import('./auth.js').then(mod => mod.getCurrentUser());
+  console.log('[Router] handleRoute start pageKey=', pageKey, 'role=', currentRole, 'perms=', currentUser?.permissions);
   
   // If no route specified, redirect based on authentication
   if (!pageKey) {

@@ -1108,6 +1108,7 @@ function updateRoleBadges(role) {
 async function applyPermissionVisibility() {
   const user = getCurrentUser();
   if (!user) return;
+  console.log('[UI] applyPermissionVisibility role=', user.role, 'perms=', user.permissions);
   
   // Admin users see all items
   if (user.role === 'admin') {
@@ -1117,17 +1118,10 @@ async function applyPermissionVisibility() {
     return;
   }
   
-  // For regular users, check permissions
-  // For now, if user has permissions array, use it; otherwise show all user items
-  const permissions = user.permissions || [];
-  
-  // If no permissions defined, show all user items (backward compatibility)
-  if (!permissions || permissions.length === 0) {
-    document.querySelectorAll("[data-permission]").forEach((el) => {
-      el.style.display = "";
-    });
-    return;
-  }
+  // For regular users, check permissions (default: hide if none)
+  const permissions = Array.isArray(user.permissions)
+    ? user.permissions
+    : [];
   
   // Hide items that user doesn't have permission for
   document.querySelectorAll("[data-permission]").forEach((el) => {

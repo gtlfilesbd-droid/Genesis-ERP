@@ -502,6 +502,7 @@ initDatabase().then(() => {
         { expiresIn: '7d' }
       );
 
+      const permissions = user.permissions ? JSON.parse(user.permissions) : [];
       res.json({
         success: true,
         token,
@@ -511,7 +512,8 @@ initDatabase().then(() => {
           email: user.email,
           username: user.username,
           role: user.role,
-          status: user.status
+          status: user.status,
+          permissions
         }
       });
     } catch (err) {
@@ -525,15 +527,16 @@ initDatabase().then(() => {
     try {
       const userId = req.user.id;
       // Get full user profile from database
-      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, permissions, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
       
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
       
+      const permissions = user.permissions ? JSON.parse(user.permissions) : [];
       res.json({
         success: true,
-        user: user
+        user: { ...user, permissions }
       });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -541,7 +544,7 @@ initDatabase().then(() => {
   });
 
   // =============================
-  // Admin API Endpoints
+  // ===== Admin API Endpoints (role enforced) =====
   // =============================
 
   // Get pending users
@@ -1274,13 +1277,14 @@ initDatabase().then(() => {
   app.get('/api/user/profile', authenticateToken, (req, res) => {
     try {
       const userId = req.user.id;
-      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      const user = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, permissions, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
       
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
       
-      res.json(user);
+      const permissions = user.permissions ? JSON.parse(user.permissions) : [];
+      res.json({ ...user, permissions });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -1317,8 +1321,9 @@ initDatabase().then(() => {
       saveDatabase();
       
       // Return updated user (excluding password)
-      const updatedUser = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
-      res.json({ success: true, user: updatedUser });
+      const updatedUser = executeQuery('SELECT id, name, email, username, role, status, profilePicture, bio, phone, address, city, country, permissions, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+      const permissions = updatedUser.permissions ? JSON.parse(updatedUser.permissions) : [];
+      res.json({ success: true, user: { ...updatedUser, permissions } });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
