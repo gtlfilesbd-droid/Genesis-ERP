@@ -149,6 +149,7 @@ async function initDatabase() {
         password TEXT NOT NULL,
         role TEXT DEFAULT 'user',
         status TEXT DEFAULT 'pending',
+        permissions TEXT,
         profilePicture TEXT,
         bio TEXT,
         phone TEXT,
@@ -196,6 +197,10 @@ async function initDatabase() {
       if (!columns.includes('designation_id')) {
         db.run('ALTER TABLE users ADD COLUMN designation_id TEXT');
         console.log('[Server] Added designation_id column to users table');
+      }
+      if (!columns.includes('permissions')) {
+        db.run('ALTER TABLE users ADD COLUMN permissions TEXT');
+        console.log('[Server] Added permissions column to users table');
       }
     } catch (error) {
       console.warn('[Server] Migration check failed (table may already have columns):', error.message);

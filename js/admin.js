@@ -1550,6 +1550,8 @@ export async function hydrateUserRolesPage(container) {
     const editRolePanel = container.querySelector('#edit-role-panel');
     const editRoleCancelBtn = container.querySelector('[data-action="cancel-edit-role"]');
     const editPermsContainer = container.querySelector('#permissions-edit-list');
+    const assignmentsTable = container.querySelector('#user-role-assignments-table');
+    const refreshAssignmentsBtn = container.querySelector('[data-action="refresh-assignments"]');
 
     // Render permission checkboxes for add form (initial)
     renderPermissionOptions(addPermsContainer, []);
@@ -1639,6 +1641,7 @@ export async function hydrateUserRolesPage(container) {
         showToast('Role assigned successfully', 'success');
         userSelect.value = '';
         roleSelect.value = '';
+        await renderAssignments(container); // refresh assignments list
       } catch (error) {
         showToast(error.message || 'Failed to assign role', 'error');
       }
@@ -1684,6 +1687,77 @@ export async function hydrateUserRolesPage(container) {
       });
     }
     
+    // Render assignments table
+    async function renderAssignments(targetContainer) {
+      if (!assignmentsTable) return;
+      try {
+        assignmentsTable.innerHTML = '<div class="loading-state text-slate-500 text-sm">Loading assignments...</div>';
+        const assignments = await loadUserRoleAssignments();
+        if (!assignments.length) {
+          assignmentsTable.innerHTML = '<div class="text-center text-slate-500 p-4">No assignments found</div>';
+          return;
+        }
+        assignmentsTable.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Permissions</th>
+                <th>Assigned At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assignments.map(a => `
+                <tr>
+                  <td>${a.user_name || '--'}</td>
+                  <td>${a.email || '--'}</td>
+                  <td>${a.role_name || '--'}</td>
+                  <td>
+                    <div class="flex flex-wrap gap-1">
+                      ${(a.permissions || []).map(p => `<span class="status-pill approved">${p}</span>`).join('')}
+                      ${(!a.permissions || a.permissions.length === 0) ? '<span class="text-slate-400">No permissions</span>' : ''}
+                    </div>
+                  </td>
+                  <td>${a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '--'}</td>
+                  <td>
+                    <button class="btn btn-outline btn-sm text-red-600" data-remove-assignment="${a.id}">Remove</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        // Wire remove buttons
+        assignmentsTable.querySelectorAll('[data-remove-assignment]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.removeAssignment;
+            if (confirm('Remove this assignment?')) {
+              try {
+                await removeRoleAssignment(id);
+                showToast('Assignment removed', 'success');
+                await renderAssignments(targetContainer);
+              } catch (error) {
+                showToast(error.message || 'Failed to remove assignment', 'error');
+              }
+            }
+          });
+        });
+      } catch (error) {
+        console.error('[Admin] Error loading assignments:', error);
+        assignmentsTable.innerHTML = '<div class="text-red-500 text-sm p-3">Failed to load assignments</div>';
+      }
+    }
+
+    // Initial assignments load
+    await renderAssignments(container);
+    refreshAssignmentsBtn?.addEventListener('click', async () => {
+      await renderAssignments(container);
+    });
+
     // Refresh button
     const refreshBtn = container.querySelector('[data-action="refresh-user-roles"]');
     refreshBtn?.addEventListener('click', () => {
