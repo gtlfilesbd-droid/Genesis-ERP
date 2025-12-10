@@ -1198,6 +1198,30 @@ export async function mountFrame() {
     hydrateUserDisplay();
     applyPermissionVisibility();
   });
+
+  // Listen for permission updates and refresh sidebar
+  document.addEventListener("permissions:updated", async (event) => {
+    const { userId } = event.detail;
+    const currentUser = getCurrentUser();
+    
+    // If permissions were updated for the current user, refresh their profile and sidebar
+    if (currentUser && currentUser.id === userId) {
+      try {
+        const { refreshUserPermissions } = await import('./auth.js');
+        await refreshUserPermissions();
+        applyPermissionVisibility();
+        console.log('[UI] Sidebar refreshed after permission update');
+      } catch (error) {
+        console.error('[UI] Error refreshing sidebar after permission update:', error);
+      }
+    }
+  });
+
+  // Listen for permission refresh events
+  document.addEventListener("permissions:refreshed", (event) => {
+    applyPermissionVisibility();
+    console.log('[UI] Sidebar refreshed after permission refresh');
+  });
   
   console.log("[UI] Frame mounted, navigation wired");
 }
@@ -2355,6 +2379,14 @@ export function hydratePage(container) {
   if (route === 'admin/user-roles') {
     import('./admin.js').then(({ hydrateUserRolesPage }) => {
       hydrateUserRolesPage(container);
+    });
+    hydrateModals(container);
+    return;
+  }
+
+  if (route === 'admin/permissions') {
+    import('./admin.js').then(({ hydratePermissionsPage }) => {
+      hydratePermissionsPage(container);
     });
     hydrateModals(container);
     return;

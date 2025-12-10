@@ -3,6 +3,64 @@ import { showToast } from './notifications.js';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
+// Permission Structure: Module -> Feature -> CRUD Permissions
+export const PERMISSION_STRUCTURE = {
+  Inventory: {
+    'Add Product': {
+      permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+      route: 'add-product'
+    },
+    'Product Database': {
+      permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+      route: 'product-database'
+    },
+    'Product Details': {
+      permissions: ['view_product', 'edit_product', 'delete_product'],
+      route: 'product-details'
+    }
+  },
+  Operations: {
+    'BOQs': {
+      permissions: ['view_boq', 'create_boq', 'edit_boq', 'delete_boq'],
+      route: 'boq-list'
+    },
+    'Requests': {
+      permissions: ['view_requests', 'create_request', 'edit_request', 'delete_request'],
+      route: 'requests-list'
+    }
+  },
+  Workspace: {
+    'Offers': {
+      permissions: ['view_offers', 'create_offer', 'edit_offer', 'delete_offer'],
+      route: 'offers-list'
+    },
+    'Dashboard': {
+      permissions: ['dashboard'],
+      route: 'user/dashboard'
+    }
+  },
+  Reporting: {
+    'Reports': {
+      permissions: ['view_reports', 'create_report', 'edit_report', 'delete_report'],
+      route: 'reports'
+    }
+  },
+  Management: {
+    'User Management': {
+      permissions: ['manage_users'],
+      route: 'admin/total-users'
+    },
+    'Department Management': {
+      permissions: ['manage_departments'],
+      route: 'admin/departments'
+    },
+    'Designation Management': {
+      permissions: ['manage_designations'],
+      route: 'admin/designations'
+    }
+  }
+};
+
 // Helper for API calls with auth
 async function apiCall(endpoint, options = {}) {
   const token = getAuthHeader();
@@ -1852,6 +1910,363 @@ export async function hydrateUserRolesPage(container) {
   } catch (error) {
     console.error('[Admin] Error hydrating user roles page:', error);
     showToast('Failed to load user roles', 'error');
+  }
+}
+
+// Load permission modules
+export async function loadPermissionModules() {
+  try {
+    const modules = await apiCall('/admin/permissions/modules');
+    return modules;
+  } catch (error) {
+    console.error('[Admin] Error loading permission modules:', error);
+    throw error;
+  }
+}
+
+// Load features for a module
+export async function loadFeaturesForModule(module) {
+  try {
+    const features = await apiCall(`/admin/permissions/features?module=${encodeURIComponent(module)}`);
+    return features;
+  } catch (error) {
+    console.error('[Admin] Error loading features:', error);
+    throw error;
+  }
+}
+
+// Load user permissions
+export async function loadUserPermissions(userId) {
+  try {
+    const data = await apiCall(`/admin/permissions/user/${userId}`);
+    return data;
+  } catch (error) {
+    console.error('[Admin] Error loading user permissions:', error);
+    throw error;
+  }
+}
+
+// Update user permissions
+export async function updateUserPermissions(userId, permissions) {
+  try {
+    const result = await apiCall(`/admin/permissions/user/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error updating user permissions:', error);
+    throw error;
+  }
+}
+
+// Load role permissions
+export async function loadRolePermissions(roleId) {
+  try {
+    const data = await apiCall(`/admin/permissions/role/${roleId}`);
+    return data;
+  } catch (error) {
+    console.error('[Admin] Error loading role permissions:', error);
+    throw error;
+  }
+}
+
+// Update role permissions
+export async function updateRolePermissions(roleId, permissions) {
+  try {
+    const result = await apiCall(`/admin/permissions/role/${roleId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    });
+    return result;
+  } catch (error) {
+    console.error('[Admin] Error updating role permissions:', error);
+    throw error;
+  }
+}
+
+// Hydrate permissions management page
+export async function hydratePermissionsPage(container) {
+  try {
+    const moduleSelect = container.querySelector('#permission-module');
+    const featureSelect = container.querySelector('#permission-feature');
+    const permissionsPanel = container.querySelector('#permissions-panel');
+    const crudPermissionsList = container.querySelector('#crud-permissions-list');
+    const assignmentPanel = container.querySelector('#assignment-panel');
+    const userSelector = container.querySelector('#permission-user-select');
+    const roleSelector = container.querySelector('#permission-role-select');
+    const userSelectorContainer = container.querySelector('#user-selector-container');
+    const roleSelectorContainer = container.querySelector('#role-selector-container');
+    const assignBtn = container.querySelector('#btn-assign-permissions');
+    const clearBtn = container.querySelector('#btn-clear-selection');
+    const currentPermissionsDisplay = container.querySelector('#current-permissions-display');
+    const assignTypeRadios = container.querySelectorAll('input[name="assign-type"]');
+
+    let selectedModule = '';
+    let selectedFeature = '';
+    let selectedFeatureData = null;
+    let currentUserPermissions = [];
+    let currentRolePermissions = [];
+    let selectedUserId = '';
+    let selectedRoleId = '';
+
+    // Load modules
+    const modules = await loadPermissionModules();
+    moduleSelect.innerHTML = '<option value="">Select Module</option>' +
+      Object.keys(modules).map(m => `<option value="${m}">${m}</option>`).join('');
+
+    // Load users and roles
+    const [users, roles] = await Promise.all([
+      loadAllUsers(),
+      loadUserRoles()
+    ]);
+
+    userSelector.innerHTML = '<option value="">Select User</option>' +
+      users.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+
+    roleSelector.innerHTML = '<option value="">Select Role</option>' +
+      roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+
+    // Module selection handler
+    moduleSelect.addEventListener('change', async (e) => {
+      selectedModule = e.target.value;
+      if (!selectedModule) {
+        featureSelect.innerHTML = '<option value="">Select Module First</option>';
+        featureSelect.disabled = true;
+        permissionsPanel.classList.add('hidden');
+        assignmentPanel.classList.add('hidden');
+        return;
+      }
+
+      const features = await loadFeaturesForModule(selectedModule);
+      featureSelect.innerHTML = '<option value="">Select Feature</option>' +
+        Object.keys(features).map(f => `<option value="${f}">${f}</option>`).join('');
+      featureSelect.disabled = false;
+      permissionsPanel.classList.add('hidden');
+      assignmentPanel.classList.add('hidden');
+    });
+
+    // Feature selection handler
+    featureSelect.addEventListener('change', async (e) => {
+      selectedFeature = e.target.value;
+      if (!selectedFeature || !selectedModule) {
+        permissionsPanel.classList.add('hidden');
+        assignmentPanel.classList.add('hidden');
+        return;
+      }
+
+      const features = await loadFeaturesForModule(selectedModule);
+      selectedFeatureData = features[selectedFeature];
+      
+      if (!selectedFeatureData) {
+        permissionsPanel.classList.add('hidden');
+        assignmentPanel.classList.add('hidden');
+        return;
+      }
+
+      // Display CRUD permissions
+      const permissionLabels = {
+        'view_': 'View',
+        'create_': 'Create/Add',
+        'edit_': 'Edit/Update',
+        'delete_': 'Delete'
+      };
+
+      crudPermissionsList.innerHTML = selectedFeatureData.permissions.map(perm => {
+        const label = Object.keys(permissionLabels).find(key => perm.startsWith(key)) 
+          ? permissionLabels[Object.keys(permissionLabels).find(key => perm.startsWith(key))]
+          : perm;
+        return `
+          <label class="flex items-center gap-2">
+            <input type="checkbox" class="input" value="${perm}" data-permission="${perm}" />
+            <span>${label}</span>
+          </label>
+        `;
+      }).join('');
+
+      permissionsPanel.classList.remove('hidden');
+      assignmentPanel.classList.remove('hidden');
+    });
+
+    // Assign type change handler
+    assignTypeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'user') {
+          userSelectorContainer.classList.remove('hidden');
+          roleSelectorContainer.classList.add('hidden');
+          selectedRoleId = '';
+          roleSelector.value = '';
+        } else {
+          userSelectorContainer.classList.add('hidden');
+          roleSelectorContainer.classList.remove('hidden');
+          selectedUserId = '';
+          userSelector.value = '';
+        }
+        currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a user or role to view their current permissions</div>';
+      });
+    });
+
+    // User selection handler
+    userSelector.addEventListener('change', async (e) => {
+      selectedUserId = e.target.value;
+      if (!selectedUserId) {
+        currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a user to view their current permissions</div>';
+        return;
+      }
+
+      try {
+        const data = await loadUserPermissions(selectedUserId);
+        currentUserPermissions = data.permissions || [];
+        currentPermissionsDisplay.innerHTML = `
+          <div class="space-y-2">
+            <div class="font-medium">${data.user.name} (${data.user.email})</div>
+            <div class="flex flex-wrap gap-1">
+              ${currentUserPermissions.length > 0 
+                ? currentUserPermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                : '<span class="text-slate-400">No permissions assigned</span>'
+              }
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        showToast('Failed to load user permissions', 'error');
+      }
+    });
+
+    // Role selection handler
+    roleSelector.addEventListener('change', async (e) => {
+      selectedRoleId = e.target.value;
+      if (!selectedRoleId) {
+        currentPermissionsDisplay.innerHTML = '<div class="text-slate-500 text-sm">Select a role to view their current permissions</div>';
+        return;
+      }
+
+      try {
+        const data = await loadRolePermissions(selectedRoleId);
+        currentRolePermissions = data.permissions || [];
+        currentPermissionsDisplay.innerHTML = `
+          <div class="space-y-2">
+            <div class="font-medium">${data.role.name}</div>
+            <div class="flex flex-wrap gap-1">
+              ${currentRolePermissions.length > 0 
+                ? currentRolePermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                : '<span class="text-slate-400">No permissions assigned</span>'
+              }
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        showToast('Failed to load role permissions', 'error');
+      }
+    });
+
+    // Assign permissions handler
+    assignBtn.addEventListener('click', async () => {
+      if (!selectedFeatureData) {
+        showToast('Please select a feature first', 'error');
+        return;
+      }
+
+      const checkedPermissions = Array.from(crudPermissionsList.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+
+      if (checkedPermissions.length === 0) {
+        showToast('Please select at least one permission', 'error');
+        return;
+      }
+
+      const assignType = document.querySelector('input[name="assign-type"]:checked')?.value;
+      
+      try {
+        if (assignType === 'user') {
+          if (!selectedUserId) {
+            showToast('Please select a user', 'error');
+            return;
+          }
+
+          // Merge with existing permissions
+          const existingPerms = currentUserPermissions || [];
+          const newPerms = [...new Set([...existingPerms, ...checkedPermissions])];
+          
+          await updateUserPermissions(selectedUserId, newPerms);
+          showToast('Permissions assigned to user successfully', 'success');
+          
+          // Refresh user permissions display
+          const data = await loadUserPermissions(selectedUserId);
+          currentUserPermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.user.name} (${data.user.email})</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentUserPermissions.length > 0 
+                  ? currentUserPermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+
+          // Emit event to refresh sidebar
+          document.dispatchEvent(new CustomEvent('permissions:updated', { 
+            detail: { userId: selectedUserId, permissions: newPerms } 
+          }));
+        } else {
+          if (!selectedRoleId) {
+            showToast('Please select a role', 'error');
+            return;
+          }
+
+          // Merge with existing permissions
+          const existingPerms = currentRolePermissions || [];
+          const newPerms = [...new Set([...existingPerms, ...checkedPermissions])];
+          
+          await updateRolePermissions(selectedRoleId, newPerms);
+          showToast('Permissions assigned to role successfully', 'success');
+          
+          // Refresh role permissions display
+          const data = await loadRolePermissions(selectedRoleId);
+          currentRolePermissions = data.permissions || [];
+          currentPermissionsDisplay.innerHTML = `
+            <div class="space-y-2">
+              <div class="font-medium">${data.role.name}</div>
+              <div class="flex flex-wrap gap-1">
+                ${currentRolePermissions.length > 0 
+                  ? currentRolePermissions.map(p => `<span class="status-pill approved">${p}</span>`).join('')
+                  : '<span class="text-slate-400">No permissions assigned</span>'
+                }
+              </div>
+            </div>
+          `;
+        }
+
+        // Clear checkboxes
+        crudPermissionsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      } catch (error) {
+        showToast(error.message || 'Failed to assign permissions', 'error');
+      }
+    });
+
+    // Clear selection handler
+    clearBtn.addEventListener('click', () => {
+      moduleSelect.value = '';
+      featureSelect.value = '';
+      featureSelect.disabled = true;
+      permissionsPanel.classList.add('hidden');
+      assignmentPanel.classList.add('hidden');
+      selectedModule = '';
+      selectedFeature = '';
+      selectedFeatureData = null;
+      crudPermissionsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    });
+
+    // Refresh button
+    const refreshBtn = container.querySelector('[data-action="refresh-permissions"]');
+    refreshBtn?.addEventListener('click', () => {
+      hydratePermissionsPage(container);
+    });
+  } catch (error) {
+    console.error('[Admin] Error hydrating permissions page:', error);
+    showToast('Failed to load permissions page', 'error');
   }
 }
 

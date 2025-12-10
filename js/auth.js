@@ -69,6 +69,38 @@ export async function refreshUserProfile() {
   }
 }
 
+// Refresh user permissions (for current user)
+export async function refreshUserPermissions() {
+  try {
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+      return null;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to refresh permissions');
+    }
+
+    const profile = await response.json();
+    setCurrentUser(profile);
+    
+    // Emit event for sidebar refresh
+    document.dispatchEvent(new CustomEvent('permissions:refreshed', { detail: profile }));
+    
+    return profile;
+  } catch (error) {
+    console.error('[Auth] Error refreshing user permissions:', error);
+    throw error;
+  }
+}
+
 // Get current role
 export function getCurrentRole() {
   const user = getCurrentUser();

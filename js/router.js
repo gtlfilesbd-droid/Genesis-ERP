@@ -14,6 +14,7 @@ const routes = {
   "admin/departments": "admin/departments.html",
   "admin/designations": "admin/designations.html",
   "admin/user-roles": "admin/user-roles.html",
+  "admin/permissions": "admin/permissions.html",
   "admin/reporting": "admin/reporting.html",
   dashboard: "dashboard.html", // Legacy, redirects based on role
   "offers-list": "offers-list.html",
@@ -44,6 +45,7 @@ const adminOnlyRoutes = [
   'admin/departments',
   'admin/designations',
   'admin/user-roles',
+  'admin/permissions',
   'admin/reporting'
 ];
 

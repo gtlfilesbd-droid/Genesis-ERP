@@ -1270,6 +1270,267 @@ initDatabase().then(() => {
   });
 
   // =============================
+  // Permission Management API Endpoints
+  // =============================
+
+  // Get permission modules structure
+  app.get('/api/admin/permissions/modules', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const modules = {
+        Inventory: {
+          'Add Product': {
+            permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+            route: 'add-product'
+          },
+          'Product Database': {
+            permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+            route: 'product-database'
+          },
+          'Product Details': {
+            permissions: ['view_product', 'edit_product', 'delete_product'],
+            route: 'product-details'
+          }
+        },
+        Operations: {
+          'BOQs': {
+            permissions: ['view_boq', 'create_boq', 'edit_boq', 'delete_boq'],
+            route: 'boq-list'
+          },
+          'Requests': {
+            permissions: ['view_requests', 'create_request', 'edit_request', 'delete_request'],
+            route: 'requests-list'
+          }
+        },
+        Workspace: {
+          'Offers': {
+            permissions: ['view_offers', 'create_offer', 'edit_offer', 'delete_offer'],
+            route: 'offers-list'
+          },
+          'Dashboard': {
+            permissions: ['dashboard'],
+            route: 'user/dashboard'
+          }
+        },
+        Reporting: {
+          'Reports': {
+            permissions: ['view_reports', 'create_report', 'edit_report', 'delete_report'],
+            route: 'reports'
+          }
+        },
+        Management: {
+          'User Management': {
+            permissions: ['manage_users'],
+            route: 'admin/total-users'
+          },
+          'Department Management': {
+            permissions: ['manage_departments'],
+            route: 'admin/departments'
+          },
+          'Designation Management': {
+            permissions: ['manage_designations'],
+            route: 'admin/designations'
+          }
+        }
+      };
+      res.json(modules);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get features for a module
+  app.get('/api/admin/permissions/features', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const module = req.query.module;
+      const modules = {
+        Inventory: {
+          'Add Product': {
+            permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+            route: 'add-product'
+          },
+          'Product Database': {
+            permissions: ['view_product', 'create_product', 'edit_product', 'delete_product'],
+            route: 'product-database'
+          },
+          'Product Details': {
+            permissions: ['view_product', 'edit_product', 'delete_product'],
+            route: 'product-details'
+          }
+        },
+        Operations: {
+          'BOQs': {
+            permissions: ['view_boq', 'create_boq', 'edit_boq', 'delete_boq'],
+            route: 'boq-list'
+          },
+          'Requests': {
+            permissions: ['view_requests', 'create_request', 'edit_request', 'delete_request'],
+            route: 'requests-list'
+          }
+        },
+        Workspace: {
+          'Offers': {
+            permissions: ['view_offers', 'create_offer', 'edit_offer', 'delete_offer'],
+            route: 'offers-list'
+          },
+          'Dashboard': {
+            permissions: ['dashboard'],
+            route: 'user/dashboard'
+          }
+        },
+        Reporting: {
+          'Reports': {
+            permissions: ['view_reports', 'create_report', 'edit_report', 'delete_report'],
+            route: 'reports'
+          }
+        },
+        Management: {
+          'User Management': {
+            permissions: ['manage_users'],
+            route: 'admin/total-users'
+          },
+          'Department Management': {
+            permissions: ['manage_departments'],
+            route: 'admin/departments'
+          },
+          'Designation Management': {
+            permissions: ['manage_designations'],
+            route: 'admin/designations'
+          }
+        }
+      };
+      
+      if (!module || !modules[module]) {
+        return res.json({});
+      }
+      
+      res.json(modules[module]);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get user's current permissions
+  app.get('/api/admin/permissions/user/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = executeQuery('SELECT id, name, email, username, permissions FROM users WHERE id = ?', [id]);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const permissions = user.permissions ? JSON.parse(user.permissions) : [];
+      res.json({ user: { id: user.id, name: user.name, email: user.email, username: user.username }, permissions });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update user permissions
+  app.put('/api/admin/permissions/user/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const { permissions } = req.body;
+      
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({ error: 'Permissions must be an array' });
+      }
+
+      const user = executeQuery('SELECT * FROM users WHERE id = ?', [id]);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const permissionsJson = JSON.stringify(permissions);
+      const updatedAt = new Date().toISOString();
+      const stmt = db.prepare('UPDATE users SET permissions = ?, updatedAt = ? WHERE id = ?');
+      stmt.run([permissionsJson, updatedAt, id]);
+      stmt.free();
+      saveDatabase();
+
+      const updatedUser = executeQuery('SELECT id, name, email, username, permissions FROM users WHERE id = ?', [id]);
+      const updatedPermissions = updatedUser.permissions ? JSON.parse(updatedUser.permissions) : [];
+      
+      res.json({ 
+        success: true, 
+        user: { 
+          id: updatedUser.id, 
+          name: updatedUser.name, 
+          email: updatedUser.email, 
+          username: updatedUser.username 
+        }, 
+        permissions: updatedPermissions 
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get role's current permissions
+  app.get('/api/admin/permissions/role/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const role = executeQuery('SELECT id, name, description, permissions FROM user_roles WHERE id = ?', [id]);
+      
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+      
+      const permissions = role.permissions ? JSON.parse(role.permissions) : [];
+      res.json({ role: { id: role.id, name: role.name, description: role.description }, permissions });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update role permissions
+  app.put('/api/admin/permissions/role/:id', authenticateToken, requireRole('admin'), (req, res) => {
+    try {
+      const { id } = req.params;
+      const { permissions } = req.body;
+      
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({ error: 'Permissions must be an array' });
+      }
+
+      const role = executeQuery('SELECT * FROM user_roles WHERE id = ?', [id]);
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const permissionsJson = JSON.stringify(permissions);
+      const stmt = db.prepare('UPDATE user_roles SET permissions = ? WHERE id = ?');
+      stmt.run([permissionsJson, id]);
+      stmt.free();
+      saveDatabase();
+
+      // Update all users with this role assigned
+      const assignments = executeQueryAll('SELECT user_id FROM user_role_assignments WHERE role_id = ?', [id]);
+      assignments.forEach(assignment => {
+        const updateStmt = db.prepare('UPDATE users SET permissions = ? WHERE id = ?');
+        updateStmt.run([permissionsJson, assignment.user_id]);
+        updateStmt.free();
+      });
+      saveDatabase();
+
+      const updatedRole = executeQuery('SELECT id, name, description, permissions FROM user_roles WHERE id = ?', [id]);
+      const updatedPermissions = updatedRole.permissions ? JSON.parse(updatedRole.permissions) : [];
+      
+      res.json({ 
+        success: true, 
+        role: { 
+          id: updatedRole.id, 
+          name: updatedRole.name, 
+          description: updatedRole.description 
+        }, 
+        permissions: updatedPermissions 
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // =============================
   // User Profile API Endpoints
   // =============================
 

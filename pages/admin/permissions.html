@@ -1,0 +1,93 @@
+<section>
+  <div class="page-header">
+    <div>
+      <div class="pill">Admin Portal</div>
+      <h1>Permission Management</h1>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" data-action="refresh-permissions">Refresh</button>
+    </div>
+  </div>
+
+  <div class="card mb-5">
+    <div class="panel-header">
+      <h3 class="m-0">Select Module & Feature</h3>
+    </div>
+    <div class="p-4 space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Module</label>
+          <select id="permission-module" class="input w-full">
+            <option value="">Select Module</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Feature</label>
+          <select id="permission-feature" class="input w-full" disabled>
+            <option value="">Select Module First</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-5 hidden" id="permissions-panel">
+    <div class="panel-header">
+      <h3 class="m-0">CRUD Permissions</h3>
+    </div>
+    <div class="p-4">
+      <div class="space-y-3" id="crud-permissions-list">
+        <!-- Permissions checkboxes will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-5 hidden" id="assignment-panel">
+    <div class="panel-header">
+      <h3 class="m-0">Assign Permissions</h3>
+    </div>
+    <div class="p-4 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">Assign To</label>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2">
+            <input type="radio" name="assign-type" value="user" checked class="input" />
+            <span>User</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="radio" name="assign-type" value="role" class="input" />
+            <span>Role</span>
+          </label>
+        </div>
+      </div>
+      <div id="user-selector-container">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Select User</label>
+        <select id="permission-user-select" class="input w-full">
+          <option value="">Select User</option>
+        </select>
+      </div>
+      <div id="role-selector-container" class="hidden">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Select Role</label>
+        <select id="permission-role-select" class="input w-full">
+          <option value="">Select Role</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" class="btn btn-primary" id="btn-assign-permissions">Assign Permissions</button>
+        <button type="button" class="btn btn-outline" id="btn-clear-selection">Clear Selection</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="panel-header">
+      <h3 class="m-0">Current Permissions</h3>
+    </div>
+    <div class="p-4">
+      <div id="current-permissions-display" class="text-slate-500 text-sm">
+        Select a user or role to view their current permissions
+      </div>
+    </div>
+  </div>
+</section>
+
