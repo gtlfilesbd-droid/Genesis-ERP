@@ -179,6 +179,20 @@ export function getCurrentRole() {
   return null;
 }
 
+// Check if current user has a specific permission.
+// Admin role bypasses permission checks to reduce friction for superusers.
+export function hasPermission(requiredPermission) {
+  if (!requiredPermission) return false;
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  // Admins are allowed by default
+  if (user.role === 'admin') return true;
+
+  const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+  return permissions.includes(requiredPermission);
+}
+
 // Set current role
 export function setCurrentRole(role) {
   localStorage.setItem(ROLE_KEY, role);

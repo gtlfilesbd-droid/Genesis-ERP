@@ -1583,18 +1583,13 @@ function wireLogout() {
 async function hydrateUserDashboard(container) {
   try {
     const { getOffers, getRequests } = await import('./data.js');
-    const { getCurrentUser } = await import('./auth.js');
+    const { getCurrentUser, hasPermission: userHasPermission } = await import('./auth.js');
     
     const user = getCurrentUser();
     if (!user) return;
 
-    const permissions = user.permissions || [];
-    
-    // If user has no permissions defined, show all (backward compatibility)
-    const hasPermission = (perm) => {
-      if (!permissions || permissions.length === 0) return true;
-      return permissions.includes(perm);
-    };
+    const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+    const hasPermission = (perm) => userHasPermission(perm);
 
     // Only load data if user has permission
     let offers = [];
@@ -1704,20 +1699,52 @@ async function hydrateUserDashboard(container) {
       }
     }
     
-    // Hide quick actions based on permissions
-    const quickActions = container.querySelectorAll('.card a[data-route]');
-    quickActions.forEach(action => {
+    // Gate quick actions per permission; show but disable with notice when missing
+    const quickActions = container.querySelectorAll(
+      'a[data-route="offer-create"], a[data-route="request-create"], a[data-route="products"]'
+    );
+    const permissionByRoute = {
+      'offer-create': 'create_offer',
+      'request-create': 'create_request',
+      'products': 'view_product',
+    };
+    quickActions.forEach((action) => {
       const route = action.getAttribute('data-route');
-      let shouldShow = false;
-      
-      if (route === 'offer-create' && hasPermission('create_offer')) shouldShow = true;
-      else if (route === 'request-create' && hasPermission('create_request')) shouldShow = true;
-      else if (route === 'products' && hasPermission('view_product')) shouldShow = true;
-      else if (route === 'boq-create' && hasPermission('create_boq')) shouldShow = true;
-      else shouldShow = true; // Default show for other actions
-      
-      if (!shouldShow) {
-        action.closest('.card')?.classList.add('hidden');
+      const requiredPerm = permissionByRoute[route];
+      const allowed = requiredPerm ? hasPermission(requiredPerm) : true;
+
+      // Remove any prior notice
+      action.querySelector('.qa-no-access')?.remove();
+
+      if (allowed) {
+        if (action._qaClickHandler) {
+          action.removeEventListener('click', action._qaClickHandler);
+          delete action._qaClickHandler;
+        }
+        action.style.opacity = '';
+        action.style.cursor = '';
+        action.removeAttribute('aria-disabled');
+        action.tabIndex = 0;
+      } else {
+        action.style.opacity = '0.55';
+        action.style.cursor = 'not-allowed';
+        action.setAttribute('aria-disabled', 'true');
+        action.tabIndex = -1;
+
+        if (!action._qaClickHandler) {
+          const handler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showToast('You do not have permission for this action', 'error');
+          };
+          action.addEventListener('click', handler);
+          action._qaClickHandler = handler;
+        }
+
+        action.insertAdjacentHTML(
+          'beforeend',
+          '<div class="text-xs text-slate-500 mt-2 qa-no-access">Permission required</div>'
+        );
       }
     });
   } catch (error) {
