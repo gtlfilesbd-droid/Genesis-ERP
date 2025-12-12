@@ -314,11 +314,15 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  width: 100%;
+  max-width: 300px;
 }
 
 .genesis-logo-img {
-  width: auto;
-  height: 80px;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  max-height: 80px;
   object-fit: contain;
   display: block;
 }
@@ -631,10 +635,12 @@ select.form-input {
 
   .logo-icon {
     justify-content: center;
+    max-width: 100%;
   }
 
   .genesis-logo-img {
-    height: 60px;
+    max-width: 240px;
+    max-height: 60px;
   }
 
   .brand-name {
@@ -692,7 +698,8 @@ select.form-input {
   }
 
   .genesis-logo-img {
-    height: 50px;
+    max-width: 200px;
+    max-height: 50px;
   }
 }
 </style>
