@@ -2714,4 +2714,3 @@ export function hydratePage(container) {
   applyRoleVisibility(getCurrentRole());
   updateRoleBadges(getCurrentRole());
 }
-
