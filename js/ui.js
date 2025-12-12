@@ -1700,18 +1700,17 @@ async function hydrateUserDashboard(container) {
     }
     
     // Gate quick actions per permission; show but disable with notice when missing
-    const quickActions = container.querySelectorAll(
-      'a[data-route="offer-create"], a[data-route="request-create"], a[data-route="products"]'
-    );
+    const quickActions = container.querySelectorAll('.card a[data-route]');
     const permissionByRoute = {
       'offer-create': 'create_offer',
       'request-create': 'create_request',
       'products': 'view_product',
+      'boq-create': 'create_boq',
     };
     quickActions.forEach((action) => {
       const route = action.getAttribute('data-route');
       const requiredPerm = permissionByRoute[route];
-      const allowed = requiredPerm ? hasPermission(requiredPerm) : true;
+      const allowed = requiredPerm ? hasPermission(requiredPerm) : true; // default allow for unmapped routes
 
       // Remove any prior notice
       action.querySelector('.qa-no-access')?.remove();

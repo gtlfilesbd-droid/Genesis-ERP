@@ -189,7 +189,10 @@ export function hasPermission(requiredPermission) {
   // Admins are allowed by default
   if (user.role === 'admin') return true;
 
+  // Legacy fallback: if permissions are not set or empty, allow access
   const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+  if (permissions.length === 0) return true;
+
   return permissions.includes(requiredPermission);
 }
 
