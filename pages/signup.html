@@ -3,18 +3,18 @@
     <div class="auth-pattern"></div>
   </div>
   
-  <div class="auth-content">
-    <div class="auth-card">
-      <!-- Logo and Branding -->
-      <div class="auth-header">
+  <div class="auth-wrapper">
+    <!-- Left Side: Branding -->
+    <div class="auth-branding">
+      <div class="branding-content">
         <div class="auth-logo">
           <div class="logo-icon">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="48" height="48" rx="12" fill="url(#logoGradient)"/>
+            <svg width="64" height="64" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="48" height="48" rx="12" fill="url(#logoGradientSignup)"/>
               <path d="M24 14L30 20H26V28H22V20H18L24 14Z" fill="white"/>
               <path d="M18 30L24 36L30 30H26V22H22V30H18Z" fill="white" opacity="0.8"/>
               <defs>
-                <linearGradient id="logoGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <linearGradient id="logoGradientSignup" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
                   <stop stop-color="#2563eb"/>
                   <stop offset="1" stop-color="#1d4ed8"/>
                 </linearGradient>
@@ -26,193 +26,229 @@
             <p class="brand-tagline">Enterprise Resource Planning</p>
           </div>
         </div>
-        <div class="auth-welcome">
-          <h2 class="welcome-title">Create Your Account</h2>
-          <p class="welcome-subtitle">Join Genesis ERP and get started today</p>
+        <div class="branding-description">
+          <h2 class="branding-title">Start Your Journey Today</h2>
+          <p class="branding-text">
+            Join thousands of businesses using Genesis ERP to streamline operations, 
+            manage resources efficiently, and drive growth. Get started in minutes 
+            and experience the power of integrated business management.
+          </p>
+          <div class="branding-features">
+            <div class="feature-item">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z" fill="currentColor"/>
+              </svg>
+              <span>Easy Setup & Onboarding</span>
+            </div>
+            <div class="feature-item">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z" fill="currentColor"/>
+              </svg>
+              <span>Comprehensive Training & Support</span>
+            </div>
+            <div class="feature-item">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z" fill="currentColor"/>
+              </svg>
+              <span>Scalable for Growing Businesses</span>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Signup Form -->
-      <form id="signup-form" class="auth-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="signup-name" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="currentColor"/>
-                <path d="M0 14C0 11.2386 2.23858 9 5 9H11C13.7614 9 16 11.2386 16 14V16H0V14Z" fill="currentColor"/>
-              </svg>
-              Full Name
-            </label>
-            <input 
-              type="text" 
-              id="signup-name" 
-              name="name" 
-              required
-              class="form-input" 
-              placeholder="Enter your full name"
-              autocomplete="name"
-            />
+    <!-- Right Side: Auth Card -->
+    <div class="auth-content">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-welcome">
+            <h2 class="welcome-title">Create Your Account</h2>
+            <p class="welcome-subtitle">Join Genesis ERP and get started today</p>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="signup-department" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 2H14C14.5523 2 15 2.44772 15 3V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3C1 2.44772 1.44772 2 2 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                <path d="M1 5H15" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M5 2V14" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-              Department
-            </label>
-            <select 
-              id="signup-department" 
-              name="department_id" 
-              required
-              class="form-input"
-            >
-              <option value="">Select department</option>
-            </select>
+        <!-- Signup Form -->
+        <form id="signup-form" class="auth-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-name" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="currentColor"/>
+                  <path d="M0 14C0 11.2386 2.23858 9 5 9H11C13.7614 9 16 11.2386 16 14V16H0V14Z" fill="currentColor"/>
+                </svg>
+                Full Name
+              </label>
+              <input 
+                type="text" 
+                id="signup-name" 
+                name="name" 
+                required
+                class="form-input" 
+                placeholder="Enter your full name"
+                autocomplete="name"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-department" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 2H14C14.5523 2 15 2.44772 15 3V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3C1 2.44772 1.44772 2 2 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M1 5H15" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 2V14" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Department
+              </label>
+              <select 
+                id="signup-department" 
+                name="department_id" 
+                required
+                class="form-input"
+              >
+                <option value="">Select department</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="signup-designation" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 0L10.5 5.5L16 8L10.5 10.5L8 16L5.5 10.5L0 8L5.5 5.5L8 0Z" fill="currentColor"/>
+                </svg>
+                Designation
+              </label>
+              <select 
+                id="signup-designation" 
+                name="designation_id" 
+                required
+                class="form-input"
+                disabled
+              >
+                <option value="">Select department first</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-mobile" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H3Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M6 4H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Mobile
+              </label>
+              <input 
+                type="tel" 
+                id="signup-mobile" 
+                name="mobile" 
+                required
+                class="form-input" 
+                placeholder="Enter mobile number"
+                autocomplete="tel"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="signup-email" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 3C1.44772 3 1 3.44772 1 4V12C1 12.5523 1.44772 13 2 13H14C14.5523 13 15 12.5523 15 12V4C15 3.44772 14.5523 3 14 3H2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M1 4L8 9L15 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Email
+              </label>
+              <input 
+                type="email" 
+                id="signup-email" 
+                name="email" 
+                required
+                class="form-input" 
+                placeholder="Enter your email"
+                autocomplete="email"
+              />
+            </div>
           </div>
 
           <div class="form-group">
-            <label for="signup-designation" class="form-label">
+            <label for="signup-address" class="form-label">
               <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 0L10.5 5.5L16 8L10.5 10.5L8 16L5.5 10.5L0 8L5.5 5.5L8 0Z" fill="currentColor"/>
+                <path d="M8 0C5.23858 0 3 2.23858 3 5C3 8.5 8 16 8 16C8 16 13 8.5 13 5C13 2.23858 10.7614 0 8 0ZM8 7C6.89543 7 6 6.10457 6 5C6 3.89543 6.89543 3 8 3C9.10457 3 10 3.89543 10 5C10 6.10457 9.10457 7 8 7Z" fill="currentColor"/>
               </svg>
-              Designation
+              Address
             </label>
-            <select 
-              id="signup-designation" 
-              name="designation_id" 
-              required
-              class="form-input"
-              disabled
-            >
-              <option value="">Select department first</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="signup-mobile" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H3Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                <path d="M6 4H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Mobile
-            </label>
-            <input 
-              type="tel" 
-              id="signup-mobile" 
-              name="mobile" 
+            <textarea 
+              id="signup-address" 
+              name="address" 
               required
               class="form-input" 
-              placeholder="Enter mobile number"
-              autocomplete="tel"
-            />
+              rows="3"
+              placeholder="Enter your address"
+              autocomplete="street-address"
+            ></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="signup-email" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 3C1.44772 3 1 3.44772 1 4V12C1 12.5523 1.44772 13 2 13H14C14.5523 13 15 12.5523 15 12V4C15 3.44772 14.5523 3 14 3H2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                <path d="M1 4L8 9L15 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Email
-            </label>
-            <input 
-              type="email" 
-              id="signup-email" 
-              name="email" 
-              required
-              class="form-input" 
-              placeholder="Enter your email"
-              autocomplete="email"
-            />
-          </div>
-        </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-username" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="currentColor"/>
+                  <path d="M0 14C0 11.2386 2.23858 9 5 9H11C13.7614 9 16 11.2386 16 14V16H0V14Z" fill="currentColor"/>
+                </svg>
+                Username
+              </label>
+              <input 
+                type="text" 
+                id="signup-username" 
+                name="username" 
+                required
+                class="form-input" 
+                placeholder="Choose a username"
+                autocomplete="username"
+              />
+            </div>
 
-        <div class="form-group">
-          <label for="signup-address" class="form-label">
-            <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 0C5.23858 0 3 2.23858 3 5C3 8.5 8 16 8 16C8 16 13 8.5 13 5C13 2.23858 10.7614 0 8 0ZM8 7C6.89543 7 6 6.10457 6 5C6 3.89543 6.89543 3 8 3C9.10457 3 10 3.89543 10 5C10 6.10457 9.10457 7 8 7Z" fill="currentColor"/>
+            <div class="form-group">
+              <label for="signup-password" class="form-label">
+                <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 0C6.34315 0 5 1.34315 5 3V5H3C2.44772 5 2 5.44772 2 6V14C2 14.5523 2.44772 15 3 15H13C13.5523 15 14 14.5523 14 14V6C14 5.44772 13.5523 5 13 5H11V3C11 1.34315 9.65685 0 8 0ZM8 2C8.55228 2 9 2.44772 9 3V5H7V3C7 2.44772 7.44772 2 8 2Z" fill="currentColor"/>
+                </svg>
+                Password
+              </label>
+              <input 
+                type="password" 
+                id="signup-password" 
+                name="password" 
+                required
+                minlength="6"
+                class="form-input" 
+                placeholder="Min. 6 characters"
+                autocomplete="new-password"
+              />
+            </div>
+          </div>
+
+          <div id="signup-error" class="form-error hidden"></div>
+          <div id="signup-success" class="form-success hidden"></div>
+
+          <button type="submit" class="auth-button">
+            <span>Create Account</span>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Address
-          </label>
-          <textarea 
-            id="signup-address" 
-            name="address" 
-            required
-            class="form-input" 
-            rows="3"
-            placeholder="Enter your address"
-            autocomplete="street-address"
-          ></textarea>
-        </div>
+          </button>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="signup-username" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="currentColor"/>
-                <path d="M0 14C0 11.2386 2.23858 9 5 9H11C13.7614 9 16 11.2386 16 14V16H0V14Z" fill="currentColor"/>
-              </svg>
-              Username
-            </label>
-            <input 
-              type="text" 
-              id="signup-username" 
-              name="username" 
-              required
-              class="form-input" 
-              placeholder="Choose a username"
-              autocomplete="username"
-            />
+          <div class="auth-divider">
+            <span>Already have an account?</span>
           </div>
 
-          <div class="form-group">
-            <label for="signup-password" class="form-label">
-              <svg class="label-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 0C6.34315 0 5 1.34315 5 3V5H3C2.44772 5 2 5.44772 2 6V14C2 14.5523 2.44772 15 3 15H13C13.5523 15 14 14.5523 14 14V6C14 5.44772 13.5523 5 13 5H11V3C11 1.34315 9.65685 0 8 0ZM8 2C8.55228 2 9 2.44772 9 3V5H7V3C7 2.44772 7.44772 2 8 2Z" fill="currentColor"/>
-              </svg>
-              Password
-            </label>
-            <input 
-              type="password" 
-              id="signup-password" 
-              name="password" 
-              required
-              minlength="6"
-              class="form-input" 
-              placeholder="Min. 6 characters"
-              autocomplete="new-password"
-            />
+          <div class="auth-footer">
+            <p class="footer-text">
+              Sign in to your existing account
+              <a href="#login" data-route="login" class="footer-link">Sign in here</a>
+            </p>
           </div>
-        </div>
-
-        <div id="signup-error" class="form-error hidden"></div>
-        <div id="signup-success" class="form-success hidden"></div>
-
-        <button type="submit" class="auth-button">
-          <span>Create Account</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="auth-divider">
-          <span>Already have an account?</span>
-        </div>
-
-        <div class="auth-footer">
-          <p class="footer-text">
-            Sign in to your existing account
-            <a href="#login" data-route="login" class="footer-link">Sign in here</a>
-          </p>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -224,46 +260,159 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
   overflow: hidden;
 }
 
 .auth-background {
   position: absolute;
   inset: 0;
-  opacity: 0.1;
+  opacity: 0.3;
 }
 
 .auth-pattern {
   width: 100%;
   height: 100%;
   background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-  background-size: 200px 200px;
-  animation: patternMove 20s linear infinite;
+    radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(96, 165, 250, 0.1) 0%, transparent 50%);
+  background-size: 400px 400px, 300px 300px, 500px 500px;
+  animation: patternMove 25s ease-in-out infinite;
 }
 
 @keyframes patternMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(200px, 200px); }
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(50px, 50px) rotate(5deg); }
 }
 
-.auth-content {
+.auth-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  gap: 4rem;
   position: relative;
   z-index: 1;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Left Side: Branding */
+.auth-branding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.branding-content {
+  max-width: 500px;
   width: 100%;
-  max-width: 600px;
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3));
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.brand-name {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.brand-tagline {
+  font-size: 1.125rem;
+  color: #475569;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.branding-description {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.branding-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.branding-text {
+  font-size: 1.125rem;
+  color: #475569;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.branding-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #334155;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.feature-item svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+/* Right Side: Auth Card */
+.auth-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
 .auth-card {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 3rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5);
+  width: 100%;
+  max-width: 600px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -273,49 +422,8 @@
   margin-bottom: 2.5rem;
 }
 
-.auth-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.3));
-}
-
-.auth-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.brand-name {
-  font-size: 2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.brand-tagline {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-  margin: 0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 .auth-welcome {
-  margin-top: 1.5rem;
+  margin-top: 0;
 }
 
 .welcome-title {
@@ -502,6 +610,46 @@ select.form-input {
   text-decoration: underline;
 }
 
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .auth-wrapper {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    min-height: auto;
+    padding: 2rem 1rem;
+  }
+
+  .auth-branding {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .branding-content {
+    max-width: 100%;
+  }
+
+  .auth-logo {
+    align-items: center;
+    text-align: center;
+  }
+
+  .logo-icon {
+    justify-content: center;
+  }
+
+  .brand-name {
+    font-size: 2.5rem;
+  }
+
+  .branding-title {
+    font-size: 1.75rem;
+  }
+
+  .branding-text {
+    font-size: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -510,20 +658,37 @@ select.form-input {
 
 @media (max-width: 640px) {
   .auth-container {
-    padding: 1rem;
+    padding: 0;
   }
-  
+
+  .auth-wrapper {
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+
   .auth-card {
     padding: 2rem 1.5rem;
     border-radius: 20px;
   }
-  
+
   .brand-name {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
-  
+
+  .branding-title {
+    font-size: 1.5rem;
+  }
+
   .welcome-title {
     font-size: 1.5rem;
+  }
+
+  .branding-features {
+    gap: 0.75rem;
+  }
+
+  .feature-item {
+    font-size: 0.9rem;
   }
 }
 </style>
