@@ -9,17 +9,7 @@
       <div class="branding-content">
         <div class="auth-logo">
           <div class="logo-icon">
-            <svg width="64" height="64" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="48" height="48" rx="12" fill="url(#logoGradientSignup)"/>
-              <path d="M24 14L30 20H26V28H22V20H18L24 14Z" fill="white"/>
-              <path d="M18 30L24 36L30 30H26V22H22V30H18Z" fill="white" opacity="0.8"/>
-              <defs>
-                <linearGradient id="logoGradientSignup" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#2563eb"/>
-                  <stop offset="1" stop-color="#1d4ed8"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="img/Genesis_Logo.png" alt="Genesis ERP Logo" class="genesis-logo-img" />
           </div>
           <div class="auth-brand">
             <h1 class="brand-name">Genesis ERP</h1>
@@ -324,7 +314,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3));
+}
+
+.genesis-logo-img {
+  width: auto;
+  height: 80px;
+  object-fit: contain;
+  display: block;
 }
 
 .auth-brand {
@@ -637,6 +633,10 @@ select.form-input {
     justify-content: center;
   }
 
+  .genesis-logo-img {
+    height: 60px;
+  }
+
   .brand-name {
     font-size: 2.5rem;
   }
@@ -689,6 +689,10 @@ select.form-input {
 
   .feature-item {
     font-size: 0.9rem;
+  }
+
+  .genesis-logo-img {
+    height: 50px;
   }
 }
 </style>
